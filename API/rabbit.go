@@ -292,7 +292,7 @@ func (rabbit *Rabbit) SendMessage(msg string, timeout_s int) (err error) {
 	channel, err = rabbit.Channel()
 
 	if err != nil {
-		return
+		return /* up to the caller to re-send */
 	}
 
 	defer channel.Close()
