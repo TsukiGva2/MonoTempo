@@ -15,16 +15,6 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
-  dbcontroller:
-    build:
-      context: Db
-    container_name: db_controller
-    environment:
-      MYSQL_DB: mytempo
-      MYSQL_HOST: db
-      MYSQL_USER: mytempo_user
-      MYSQL_PASS: mytempo1
-
   php:
     build:
       context: Php
@@ -35,6 +25,10 @@ services:
       MYSQL_HOST: db
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
     ports:
       - "8080:80"
 

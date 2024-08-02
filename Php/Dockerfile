@@ -20,7 +20,6 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" &&
 COPY ./src /var/www/html/
 COPY ./src/server.php /var/www/server.php
 
-
 # Copy the supervisor configuration file
 COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 

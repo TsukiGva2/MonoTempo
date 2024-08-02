@@ -14,7 +14,7 @@ class WebSocketServer implements MessageComponentInterface {
         $this->clients = new \SplObjectStorage;
 
         // Set up RabbitMQ connection
-        $connection = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest');
+        $connection = new AMQPStreamConnection($_ENV["RABBITMQ_HOST"], $_ENV["RABBITMQ_PORT"], $_ENV["RABBITMQ_USER"], $_ENV["RABBITMQ_PASS"]);
         $this->channel = $connection->channel();
         $this->channel->queue_declare('api.data', false, false, false, false);
         $this->channel->basic_consume('api.data', '', false, true, false, false, [$this, 'processMessage']);
