@@ -40,7 +40,7 @@ services:
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
       MYTEMPO_EQUIP: "PORTAL LEITOR RFIDMY501"
-      MYTEMPO_API_URL: "localhost:9000" #api.mytempo.esp.br
+      MYTEMPO_API_URL: "api.v2.mytempo.esp.br" #api.mytempo.esp.br
 
   envio:
     build:
