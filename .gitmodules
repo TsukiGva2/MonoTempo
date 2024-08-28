@@ -4,3 +4,6 @@
 [submodule "Envio"]
 	path = Envio
 	url = https://github.com/mytempoesp/Envio
+[submodule "Receba"]
+	path = Receba
+	url = https://github.com/mytempoesp/Receba
