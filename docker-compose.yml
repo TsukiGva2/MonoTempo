@@ -61,6 +61,7 @@ services:
       MYSQL_PORT: 3306
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
+      MYTEMPO_API_URL: "api.v2.mytempo.esp.br" #api.mytempo.esp.br
 
 
   rabbitmq:
