@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Aug 23, 2024 at 12:18 PM
+-- Generation Time: Aug 28, 2024 at 07:06 PM
 -- Server version: 8.0.39
 -- PHP Version: 8.2.8
 
@@ -30,18 +30,11 @@ SET time_zone = "+00:00";
 CREATE TABLE `athletes` (
   `num` int NOT NULL,
   `event_id` int DEFAULT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `sex` varchar(1) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `team` varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sex` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `team` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `track_id` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `athletes`
---
-
-INSERT INTO `athletes` (`num`, `event_id`, `name`, `sex`, `team`, `track_id`) VALUES
-(200, 201, 'josme merda recebA!', 'M', 'MERDA A JATO', 400);
 
 -- --------------------------------------------------------
 
@@ -51,16 +44,22 @@ INSERT INTO `athletes` (`num`, `event_id`, `name`, `sex`, `team`, `track_id`) VA
 
 CREATE TABLE `athletes_times` (
   `antenna` int DEFAULT NULL,
-  `athlete_num` int DEFAULT NULL,
-  `athlete_time` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+  `athlete_num` int NOT NULL,
+  `athlete_time` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
 --
--- Dumping data for table `athletes_times`
+-- Table structure for table `equipamento`
 --
 
-INSERT INTO `athletes_times` (`antenna`, `athlete_num`, `athlete_time`) VALUES
-(2, 200, '08:23:45.543');
+CREATE TABLE `equipamento` (
+  `id` tinyint(1) NOT NULL,
+  `idequip` int NOT NULL,
+  `modelo` varchar(30) NOT NULL,
+  `event_id` int NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -71,15 +70,8 @@ INSERT INTO `athletes_times` (`antenna`, `athlete_num`, `athlete_time`) VALUES
 CREATE TABLE `event_data` (
   `id` int NOT NULL,
   `event_date` date DEFAULT NULL,
-  `event_title` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+  `event_title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `event_data`
---
-
-INSERT INTO `event_data` (`id`, `event_date`, `event_title`) VALUES
-(201, '2024-08-20', 'PROVA MUTO SEXO');
 
 -- --------------------------------------------------------
 
@@ -90,19 +82,11 @@ INSERT INTO `event_data` (`id`, `event_date`, `event_title`) VALUES
 CREATE TABLE `tracks` (
   `id` int NOT NULL,
   `event_id` int DEFAULT NULL,
-  `race_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `km` decimal(3,1) DEFAULT NULL,
+  `race_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `inicio` time DEFAULT NULL,
   `chegada` time DEFAULT NULL,
   `largada` time DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `tracks`
---
-
-INSERT INTO `tracks` (`id`, `event_id`, `race_description`, `km`, `inicio`, `chegada`, `largada`) VALUES
-(400, 201, 'BISTA', 5.0, '10:15:00', '10:20:00', '00:05:00');
 
 --
 -- Indexes for dumped tables
@@ -120,7 +104,15 @@ ALTER TABLE `athletes`
 -- Indexes for table `athletes_times`
 --
 ALTER TABLE `athletes_times`
+  ADD PRIMARY KEY (`athlete_num`),
   ADD KEY `athlete_num` (`athlete_num`);
+
+--
+-- Indexes for table `equipamento`
+--
+ALTER TABLE `equipamento`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `event_id` (`event_id`);
 
 --
 -- Indexes for table `event_data`
