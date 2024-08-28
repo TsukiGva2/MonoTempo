@@ -1,11 +1,46 @@
-version: '3.8'
+#version: '3.8'
+
+#   By Rodrigo Monteiro Junior (TsukiGva2)
+#   qua 28 ago 2024 12:41:57 -03
+#   
+#   Version 0.1
+#     Docker compose file for setting up
+#      - MySql.............................(mysql:8.0)
+#      - Reader............................(MyReader)
+#      - RabbitMQ Message broker for comms.(rabbitmq)
+#      - Auto-Update functionality.........(Receba)
+#      - Sending collected data to the API.(Envio)
+#
+#      And PhpMyAdmin for debugging database stuff
+#
+#      Please ensure *ALL* _services_ contain the property
+#      `restart: always`, as they run in an embedded
+#      environment we cannot control.
+#
+#      Another useful convention is naming containers
+#      like `monotempo_X` where X is the name of the
+#      image being built.
+#
+#      - TODO: Unhardcode values everywhere, use a .env instead;
+#      - TODO: bump mysql to latest;
+#      - TODO: improve security at mysql and rabbitmq containers;
+#      - TODO: remove PhpMyAdmin? [Y/n];
+#      - TODO: remove rabbitmq-management plugin? [Y/n].
+#
+#      < Low priority >
+#
+#      - TODO: Use a script (or just the fucking .env) to set
+#              the reader type and model name easily.
+
 
 services:
   db:
+    # TODO: bump mysql to latest?
     image: mysql:8.0
-    container_name: mysql_envio
+    container_name: monotempo_mysql
     restart: always
     environment:
+      # XXX: security? Never heard of it
       MYSQL_ROOT_PASSWORD: mytempo_root1
       MYSQL_DATABASE: mytempo
       MYSQL_USER: mytempo_user
@@ -16,9 +51,11 @@ services:
       - ./mytempo.sql:/docker-entrypoint-initdb.d/mytempo.sql
       - db_data:/var/lib/mysql
 
+  # FIXME: remove this, it's just for debugging
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin_envio
+    restart: always
     environment:
       PMA_HOST: db
       PMA_USER: mytempo_user
@@ -28,6 +65,7 @@ services:
 
   receba:
     container_name: monotempo_receba
+    restart: always
     build:
       context: Receba
     
@@ -40,10 +78,12 @@ services:
       MYSQL_PORT: 3306
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
-      MYTEMPO_EQUIP: "PORTAL LEITOR RFIDMY501"
-      MYTEMPO_API_URL: "api.v2.mytempo.esp.br" #api.mytempo.esp.br
+      MYTEMPO_EQUIP: "PORTAL LEITOR RFIDMY501" # TODO: This has to be set manually
+      MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
 
   envio:
+    container_name: monotempo_envio
+    restart: always
     build:
       context: Envio
 
@@ -61,23 +101,27 @@ services:
       MYSQL_PORT: 3306
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
-      MYTEMPO_API_URL: "api.v2.mytempo.esp.br" #api.mytempo.esp.br
+      MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
 
 
   rabbitmq:
+    # FIXME: management is also a debug thing, get rid of it
     image: rabbitmq:3-management
-
-    container_name: rabbitmq_envio
+    container_name: monotempo_rabbitmq
+    restart: always
 
     ports:
       - "5672:5672"
       - "15672:15672"
 
     environment:
+      # XXX: less of a security concern, but please set better credentials
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
   myreader:
+    container_name: monotempo_myreader
+    restart: always
     build:
       context: MyReader
 
@@ -89,6 +133,7 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASS: guest
+      MYTEMPO_READER: impinj # TODO: This has to be set manually
 
 volumes:
   db_data:
