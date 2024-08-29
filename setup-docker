@@ -1,0 +1,9 @@
+#!/bin/sh
+
+pacman -Syu
+pacman -Sy docker docker-compose dnsmasq
+
+systemctl enable docker.service
+
+reboot
+
