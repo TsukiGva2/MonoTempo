@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Aug 28, 2024 at 07:06 PM
+-- Generation Time: Aug 29, 2024 at 12:50 PM
 -- Server version: 8.0.39
 -- PHP Version: 8.2.8
 
@@ -43,6 +43,7 @@ CREATE TABLE `athletes` (
 --
 
 CREATE TABLE `athletes_times` (
+  `id` int NOT NULL,
   `antenna` int DEFAULT NULL,
   `athlete_num` int NOT NULL,
   `athlete_time` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -104,7 +105,8 @@ ALTER TABLE `athletes`
 -- Indexes for table `athletes_times`
 --
 ALTER TABLE `athletes_times`
-  ADD PRIMARY KEY (`athlete_num`),
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `id` (`id`),
   ADD KEY `athlete_num` (`athlete_num`);
 
 --
@@ -126,6 +128,16 @@ ALTER TABLE `event_data`
 ALTER TABLE `tracks`
   ADD PRIMARY KEY (`id`),
   ADD KEY `event_id` (`event_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `athletes_times`
+--
+ALTER TABLE `athletes_times`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables
