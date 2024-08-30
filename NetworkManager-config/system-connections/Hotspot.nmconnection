@@ -1,12 +1,12 @@
 [connection]
-id=Portal-my701
+id=Portal-my${HOSTNAME}
 uuid=92ba4644-b5e6-42d6-86ad-df1f839f270c
 type=wifi
 interface-name=wlp0s21f0u1u2
 
 [wifi]
 mode=ap
-ssid=Portal-my701
+ssid=
 
 [wifi-security]
 group=ccmp;

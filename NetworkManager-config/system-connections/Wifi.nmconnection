@@ -7,12 +7,12 @@ interface-name=wlp1s0
 [wifi]
 bssid=80:85:44:83:F1:57
 mode=infrastructure
-ssid=OFICINA 
+ssid=
 
 [wifi-security]
 auth-alg=open
 key-mgmt=wpa-psk
-psk=ab9104087
+psk=
 
 [ipv4]
 method=auto

@@ -2,7 +2,38 @@
 
 #   By Rodrigo Monteiro Junior (TsukiGva2)
 #   qua 28 ago 2024 12:41:57 -03
-#   
+#
+#      Please ensure *ALL* _services_ contain the property
+#      `restart: always`, as they run in an embedded
+#      environment we cannot control.
+#
+#      Another useful convention is naming containers
+#      like `monotempo_X` where X is the name of the
+#      image being built.
+#
+#   Version 0.2
+#     Docker compose file for setting up
+#      - MySql.............................(mysql:8.0)
+#      - Reader............................(MyReader)
+#      - RabbitMQ Message broker for comms.(rabbitmq)
+#      - Auto-Update functionality.........(Receba)
+#      - Sending collected data to the API.(Envio)
+#      - Página Hotspot....................(php)      <-- added
+#
+#      And PhpMyAdmin for debugging database stuff
+#
+#
+#      Reorganized priorities:
+#
+#      - TODO: Unhardcode values everywhere, use a .env instead;
+#
+#     < Low Priority >
+#
+#      - TODO: bump mysql to latest;
+#      - TODO: remove PhpMyAdmin? [Y/n];
+#      - TODO: remove rabbitmq-management plugin? [Y/n].
+#      - TODO: improve security at mysql and rabbitmq containers;
+#
 #   Version 0.1
 #     Docker compose file for setting up
 #      - MySql.............................(mysql:8.0)
@@ -12,14 +43,6 @@
 #      - Sending collected data to the API.(Envio)
 #
 #      And PhpMyAdmin for debugging database stuff
-#
-#      Please ensure *ALL* _services_ contain the property
-#      `restart: always`, as they run in an embedded
-#      environment we cannot control.
-#
-#      Another useful convention is naming containers
-#      like `monotempo_X` where X is the name of the
-#      image being built.
 #
 #      - TODO: Unhardcode values everywhere, use a .env instead;
 #      - TODO: bump mysql to latest;
@@ -54,7 +77,7 @@ services:
   # FIXME: remove this, it's just for debugging
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin_envio
+    container_name: monotempo_phpmyadmin
     restart: always
     environment:
       PMA_HOST: db
@@ -62,6 +85,28 @@ services:
       PMA_PASSWORD: mytempo1
     ports:
       - "8082:80"
+
+  php:
+    container_name: monotempo_pagina
+    restart: always
+    build:
+      context: Php
+
+    depends_on:
+      - db
+
+    environment:
+      MYSQL_DB: mytempo
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: mytempo_user
+      MYSQL_PASS: mytempo1
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest 
+    ports:
+      - 80:80
 
   receba:
     container_name: monotempo_receba
@@ -134,6 +179,17 @@ services:
       RABBITMQ_USER: guest
       RABBITMQ_PASS: guest
       MYTEMPO_READER: impinj # TODO: This has to be set manually
+      READER_IP: 10.19.3.61 # TODO: This has to be set manually
+
+  datemon:
+    container_name: monotempo_datemon
+    restart: always
+    build:
+      context: Datemon
+
+    environment:
+      MYTEMPO_READER: impinj
+      READER_IP: 10.19.3.61 # TODO: This has to be set manually
 
 volumes:
   db_data:
