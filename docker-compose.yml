@@ -86,6 +86,21 @@ services:
     ports:
       - "8082:80"
 
+  rabbitmq:
+    # FIXME: management is also a debug thing, get rid of it
+    image: rabbitmq:3-management
+    container_name: monotempo_rabbitmq
+    restart: always
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    environment:
+      # XXX: less of a security concern, but please set better credentials
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest   
+
   php:
     container_name: monotempo_pagina
     restart: always
@@ -94,6 +109,7 @@ services:
 
     depends_on:
       - db
+      - rabbitmq
 
     environment:
       MYSQL_DB: mytempo
@@ -147,22 +163,6 @@ services:
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
       MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
-
-
-  rabbitmq:
-    # FIXME: management is also a debug thing, get rid of it
-    image: rabbitmq:3-management
-    container_name: monotempo_rabbitmq
-    restart: always
-
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-
-    environment:
-      # XXX: less of a security concern, but please set better credentials
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
 
   myreader:
     container_name: monotempo_myreader
