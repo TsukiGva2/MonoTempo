@@ -27,6 +27,7 @@ printf ""
 
 if [ "${ISINSANE:-y}" = "n" ] ; then
 	git pull
+	git submodule update --init --remote --recursive
 fi
 
 FUCKO=$(fucko)
