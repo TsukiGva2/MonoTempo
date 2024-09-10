@@ -10,3 +10,6 @@
 [submodule "Php"]
 	path = Php
 	url = https://github.com/mytempoesp/pagina_hotspot
+[submodule "8812au-20210820"]
+	path = 8812au-20210820
+	url = https://github.com/morrownr/8812au-20210820
