@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Sep 04, 2024 at 02:07 PM
+-- Generation Time: Sep 11, 2024 at 05:57 PM
 -- Server version: 8.0.39
 -- PHP Version: 8.2.8
 
@@ -45,6 +45,7 @@ CREATE TABLE `athletes` (
 CREATE TABLE `athletes_times` (
   `id` int NOT NULL,
   `antenna` int DEFAULT NULL,
+  `checkpoint_id` int NOT NULL,
   `athlete_num` int NOT NULL,
   `athlete_time` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `staff` int NOT NULL,
@@ -54,11 +55,25 @@ CREATE TABLE `athletes_times` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `checkpoints`
+--
+
+CREATE TABLE `checkpoints` (
+  `id` int NOT NULL,
+  `description` int NOT NULL,
+  `km` int NOT NULL,
+  `local` int NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `equipamento`
 --
 
 CREATE TABLE `equipamento` (
   `id` tinyint(1) NOT NULL,
+  `checkpoint_id` int NOT NULL,
   `idequip` int NOT NULL,
   `modelo` varchar(30) NOT NULL,
   `event_id` int NOT NULL
@@ -85,6 +100,7 @@ CREATE TABLE `event_data` (
 CREATE TABLE `invalidos` (
   `id` int NOT NULL,
   `antenna` int DEFAULT NULL,
+  `checkpoint_id` int NOT NULL,
   `athlete_num` int NOT NULL,
   `athlete_time` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `staff` int NOT NULL,
@@ -139,11 +155,18 @@ ALTER TABLE `athletes_times`
   ADD KEY `athlete_num` (`athlete_num`);
 
 --
+-- Indexes for table `checkpoints`
+--
+ALTER TABLE `checkpoints`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `equipamento`
 --
 ALTER TABLE `equipamento`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `event_id` (`event_id`);
+  ADD KEY `event_id` (`event_id`),
+  ADD KEY `checkpoint_id` (`checkpoint_id`);
 
 --
 -- Indexes for table `event_data`
