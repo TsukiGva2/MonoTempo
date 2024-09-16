@@ -26,6 +26,7 @@ Centralized stuff
 - [ ] Start container and stuff automatically at boot
 - [ ] Configure impinj reader's time automatically <- FIXME
 - [ ] Configure docker-compose.yml to the correct reader
+- [ ] Get equipment checkpoint data.
 
 ## Per-topic
 
