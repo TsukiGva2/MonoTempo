@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Sep 11, 2024 at 05:57 PM
+-- Generation Time: Sep 18, 2024 at 01:16 PM
 -- Server version: 8.0.39
 -- PHP Version: 8.2.8
 
@@ -110,6 +110,20 @@ CREATE TABLE `invalidos` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `rede`
+--
+
+CREATE TABLE `rede` (
+  `ssid` varchar(100) NOT NULL,
+  `password` int NOT NULL,
+  `status` tinyint NOT NULL DEFAULT '0',
+  `descricao` varchar(255) NOT NULL,
+  `conectar` tinyint NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `staffs`
 --
 
@@ -132,6 +146,23 @@ CREATE TABLE `tracks` (
   `inicio` time DEFAULT NULL,
   `chegada` time DEFAULT NULL,
   `largada` time DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `unsent_athletes`
+--
+
+CREATE TABLE `unsent_athletes` (
+  `id` int NOT NULL,
+  `antenna` int DEFAULT NULL,
+  `checkpoint_id` int NOT NULL,
+  `athlete_num` int NOT NULL,
+  `athlete_time` varchar(12) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `staff` int NOT NULL,
+  `timestp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `percurso` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -195,6 +226,16 @@ ALTER TABLE `tracks`
   ADD KEY `event_id` (`event_id`);
 
 --
+-- Indexes for table `unsent_athletes`
+--
+ALTER TABLE `unsent_athletes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `id` (`id`),
+  ADD KEY `athlete_num` (`athlete_num`),
+  ADD KEY `percursoid` (`percurso`),
+  ADD KEY `percurso` (`percurso`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -208,6 +249,12 @@ ALTER TABLE `athletes_times`
 -- AUTO_INCREMENT for table `invalidos`
 --
 ALTER TABLE `invalidos`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `unsent_athletes`
+--
+ALTER TABLE `unsent_athletes`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
@@ -237,6 +284,13 @@ ALTER TABLE `staffs`
 --
 ALTER TABLE `tracks`
   ADD CONSTRAINT `tracks_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `event_data` (`id`);
+
+--
+-- Constraints for table `unsent_athletes`
+--
+ALTER TABLE `unsent_athletes`
+  ADD CONSTRAINT `unsent_athletes_ibfk_1` FOREIGN KEY (`athlete_num`) REFERENCES `athletes` (`num`),
+  ADD CONSTRAINT `unsent_athletes_ibfk_2` FOREIGN KEY (`percurso`) REFERENCES `tracks` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
