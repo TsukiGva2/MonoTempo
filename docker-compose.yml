@@ -114,6 +114,9 @@ services:
       - db
       - rabbitmq
 
+    volumes:
+      - ./network:/host-network
+
     environment:
       MYSQL_DB: mytempo
       MYSQL_HOST: db

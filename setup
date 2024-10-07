@@ -1,9 +1,11 @@
 #!/bin/sh
 
-cp NetworkManager-config/system-connections/* /etc/NetworkManager/system-connections
+#cp NetworkManager-config/system-connections/* /etc/NetworkManager/system-connections
 
 git pull
 git submodule update --init --recursive
+
+mkfifo ./network
 
 docker compose up --build
 
