@@ -78,7 +78,7 @@ void connect(const char *network, const char *password) {
 }
 
 int main(void) {
-  int fd = -1;
+  int fd = -1; /* file descriptor for the FIFO communication file */
 
   char *network, *password;
   network = NULL;
