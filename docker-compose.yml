@@ -168,6 +168,27 @@ services:
       MYSQL_PASS: mytempo1
       MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
 
+  analytics:
+    container_name: monotempo_analytics
+    restart: always
+    build:
+      context: Analytics
+
+    depends_on:
+      - rabbitmq
+      - db
+
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      MYSQL_DB: mytempo
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: mytempo_user
+      MYSQL_PASS: mytempo1
+
   myreader:
     container_name: monotempo_myreader
     restart: always

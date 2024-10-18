@@ -12,6 +12,6 @@ fi
 GRANT FILE on *.* to mytempo_user@'%';
 
 /*EQUIP_DATA*/
-INSERT INTO `equipamento`(`id`, `checkpoint_id`, `idequip`, `modelo`, `event_id`, `tags_unicas`) VALUES (1,0,0,'',0,0); 
+INSERT INTO equipamento(id, checkpoint_id, idequip, modelo, event_id, tags_unicas) VALUES (1,0,0,'',0,0); 
 end
 
