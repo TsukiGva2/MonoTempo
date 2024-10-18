@@ -16,3 +16,6 @@
 [submodule "Reenvio"]
 	path = Reenvio
 	url = https://github.com/mytempoesp/Reenvio
+[submodule "Analytics"]
+	path = Analytics
+	url = https://github.com/mytempoesp/Analytics

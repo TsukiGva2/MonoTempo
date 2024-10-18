@@ -1,0 +1,4 @@
+#!/bin/sh
+
+diff -u docker-compose.yml docker-compose-$1.yml > patches/docker-compose-$1.yml.patch
+rm -i docker-compose-$1.yml
