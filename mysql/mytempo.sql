@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: db
--- Generation Time: Oct 15, 2024 at 12:58 PM
--- Server version: 8.0.39
+-- Generation Time: Oct 18, 2024 at 09:28 PM
+-- Server version: 8.0.40
 -- PHP Version: 8.2.8
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -89,7 +89,8 @@ CREATE TABLE `equipamento` (
   `checkpoint_id` int NOT NULL,
   `idequip` int NOT NULL,
   `modelo` varchar(30) NOT NULL,
-  `event_id` int NOT NULL
+  `event_id` int NOT NULL,
+  `tags_unicas` int NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
