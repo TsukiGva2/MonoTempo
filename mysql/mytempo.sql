@@ -343,3 +343,6 @@ COMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*FIX_FILE_PERM*/
 GRANT FILE on *.* to mytempo_user@'%';
+
+/*EQUIP_DATA*/
+INSERT INTO equipamento(id, checkpoint_id, idequip, modelo, event_id, tags_unicas) VALUES (1,0,0,'',0,0); 
