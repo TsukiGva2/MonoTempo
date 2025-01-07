@@ -171,12 +171,16 @@ services:
   analytics:
     container_name: monotempo_analytics
     restart: always
+    privileged: true
     build:
       context: Analytics
 
     depends_on:
       - rabbitmq
       - db
+
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
 
     environment:
       RABBITMQ_HOST: rabbitmq
