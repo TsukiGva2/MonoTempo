@@ -192,6 +192,7 @@ services:
       MYSQL_PORT: 3306
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
+      READER_IP: "192.168.1.200" # TODO: This has to be set manually
 
   myreader:
     container_name: monotempo_myreader
