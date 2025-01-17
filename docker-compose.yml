@@ -208,6 +208,7 @@ services:
       RABBITMQ_USER: guest
       RABBITMQ_PASS: guest
       READER_IP: "192.168.1.200" # TODO: This has to be set manually 
+      MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
 
   myreader:
     container_name: monotempo_myreader
