@@ -171,16 +171,12 @@ services:
   analytics:
     container_name: monotempo_analytics
     restart: always
-    privileged: true
     build:
       context: Analytics
 
     depends_on:
       - rabbitmq
       - db
-
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
 
     environment:
       RABBITMQ_HOST: rabbitmq
@@ -192,7 +188,26 @@ services:
       MYSQL_PORT: 3306
       MYSQL_USER: mytempo_user
       MYSQL_PASS: mytempo1
-      READER_IP: "192.168.1.200" # TODO: This has to be set manually
+
+   aa2:
+    container_name: monotempo_aa2
+    restart: always
+    privileged: true
+    build:
+      context: AA2
+
+    depends_on:
+      - rabbitmq
+
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      READER_IP: "192.168.1.200" # TODO: This has to be set manually 
 
   myreader:
     container_name: monotempo_myreader

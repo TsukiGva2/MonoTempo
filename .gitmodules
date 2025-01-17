@@ -19,3 +19,6 @@
 [submodule "Analytics"]
 	path = Analytics
 	url = https://github.com/mytempoesp/Analytics
+[submodule "AA2"]
+	path = AA2
+	url = https://github.com/MyTempoESP/AA2
