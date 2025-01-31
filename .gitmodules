@@ -22,3 +22,6 @@
 [submodule "AA2"]
 	path = AA2
 	url = https://github.com/MyTempoESP/AA2
+[submodule "Process-Athletes"]
+	path = Process-Athletes
+	url = https://github.com/MyTempoESP/Process-Athletes
