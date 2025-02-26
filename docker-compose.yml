@@ -91,11 +91,9 @@ services:
     image: rabbitmq:3-management
     container_name: monotempo_rabbitmq
     restart: always
-
     ports:
       - "5672:5672"
       - "15672:15672"
-
     environment:
       # XXX: less of a security concern, but please set better credentials
       RABBITMQ_DEFAULT_USER: guest
@@ -106,25 +104,12 @@ services:
     restart: always
     build:
       context: Php
-
     depends_on:
       - db
       - rabbitmq
-
     volumes:
       - ./network:/host-network
-
-    environment:
-      MYSQL_DB: mytempo
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_USER: mytempo_user
-      MYSQL_PASS: mytempo1
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
-      RABBITMQ_MGMT_PORT: 15672
+    env_file: shared.env
     ports:
       - 80:80
 
@@ -133,62 +118,29 @@ services:
     restart: always
     build:
       context: Receba
-
     depends_on:
       - db
-
-    environment:
-      MYSQL_DB: mytempo
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_USER: mytempo_user
-      MYSQL_PASS: mytempo1
-      MYTEMPO_EQUIP: "PORTAL LEITOR RFIDMY501" # TODO: This has to be set manually
-      MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
+    env_file: shared.env
 
   envio:
     container_name: monotempo_envio
     restart: always
     build:
       context: Envio
-
     depends_on:
       - rabbitmq
       - db
-
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
-      MYSQL_DB: mytempo
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_USER: mytempo_user
-      MYSQL_PASS: mytempo1
-      MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
+    env_file: shared.env
 
   process:
     container_name: ProcessAthletes
     restart: always
     build:
       context: Process-Athletes
-
     depends_on:
       - rabbitmq
       - db
-
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
-      MYSQL_DB: mytempo
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_USER: mytempo_user
-      MYSQL_PASS: mytempo1
-
+    env_file: shared.env
 
   aa2:
     container_name: aa2
@@ -196,34 +148,16 @@ services:
     privileged: true
     build:
       context: AA2
-
     depends_on:
       - rabbitmq
       - db
-
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
-      #- "/dev/sdb:/dev/sdb"
-      #- "/dev/sdc:/dev/sdc"
-
+    env_file:
+      - AA2/aa2.env
+      - shared.env
     volumes:
       - /dev:/dev
       - /etc/localtime:/etc/localtime:ro
       - /tmp:/tmp
-
-    environment:
-      TZ: "Brazil/East"
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
-      MYSQL_DB: mytempo
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_USER: mytempo_user
-      MYSQL_PASS: mytempo1
-      READER_IP: "192.168.1.200" # TODO: This has to be set manually
-      MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
 
   myreader:
     container_name: monotempo_myreader
@@ -232,20 +166,10 @@ services:
       context: MyReader
     logging:
       driver: none
-
     depends_on:
       - rabbitmq
       - db
-
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
-      MYTEMPO_READER_TYPE: chafon # TODO: This has to be set manually
-      MYTEMPO_READER: "PORTAL LEITOR RFIDMY501" # TODO: This has to be set manually
-      READER_IP: "192.168.1.200" # TODO: This has to be set manually
-      READER_SUBTYPE: none
+    env_file: shared.env
 
   reenvio:
    container_name: monotempo_reenvio
@@ -254,17 +178,7 @@ services:
      context: Reenvio
    depends_on:
      - db
-   environment:
-     RABBITMQ_HOST: rabbitmq
-     RABBITMQ_PORT: 5672
-     RABBITMQ_USER: guest
-     RABBITMQ_PASS: guest
-     MYSQL_DB: mytempo
-     MYSQL_HOST: db
-     MYSQL_PORT: 3306
-     MYSQL_USER: mytempo_user
-     MYSQL_PASS: mytempo1
-     MYTEMPO_API_URL: "api.v2.mytempo.esp.br"
+   env_file: shared.env
 
 volumes:
   db_data:
