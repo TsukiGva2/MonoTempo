@@ -16,7 +16,7 @@ git diff >> $HOME/mytempo_changelog
 read -p "Is this alright? [Y/n] " ALR
 
 if [ ${ALR:-y} = "n" ] ; then
-	echo "Aborting... be safe."
+	echo "Aborting... stay safe."
 	exit
 fi
 echo
