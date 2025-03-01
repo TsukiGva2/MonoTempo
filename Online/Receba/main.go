@@ -4,16 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/mytempoesp/mysql-easy"
 )
 
 func (r *Receba) ConfiguraDB() (err error) {
-
-	db, err := mysql_easy.ConfiguraDB()
 
 	r.db = db
 
@@ -199,26 +192,4 @@ func main() {
 
 	r.Atualiza()
 	r.AtualizarAtletas()
-
-	atualizarProva := time.NewTicker(15 * time.Second)
-	atualizarAtletas := time.NewTicker(122 * time.Second)
-
-	terminate := make(chan os.Signal, 1)
-	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
-
-	for {
-		select {
-		case <-atualizarProva.C:
-			r.Atualiza()
-
-		case <-atualizarAtletas.C:
-			go r.AtualizarAtletas() /* backoff gives up after 20sec */
-
-		case <-terminate:
-			atualizarProva.Stop()
-			atualizarAtletas.Stop()
-
-			return
-		}
-	}
 }

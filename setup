@@ -2,13 +2,16 @@
 
 #cp NetworkManager-config/system-connections/* /etc/NetworkManager/system-connections
 
-pacman -Sy dosfstools
+#pacman -Sy dosfstools
 
 git pull
-git submodule update --init --recursive --remote
 
-mkfifo ./wifi-connection
-chmod 0666 ./wifi-connection
+#git submodule update --init --recursive --remote
 
-docker compose up --build
+#mkfifo ./wifi-connection
+#chmod 0666 ./wifi-connection
+
+#docker compose up --build
+
+mkdir -p /var/lib/MONOTEMPO-docker/database/
 
