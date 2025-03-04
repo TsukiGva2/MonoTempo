@@ -7,25 +7,10 @@ import (
 
 	"fmt"
 	"log"
-
-	"sync"
 )
 
 const (
-	REENVIO_INTERVALO = 23 * time.Second
-
-	ARMAZENA_ATLETA_QUERY = `
-	INSERT INTO unsent_athletes(
-	    antenna,
-	    checkpoint_id,
-	    athlete_num,
-	    athlete_time,
-	    staff,
-	    percurso
-	)
-	VALUES (?, ?, ?, ?, ?, ?)
-`
-
+	REENVIO_INTERVALO     = 23 * time.Second
 	TIMEOUT_MONITORAMENTO = 5 * time.Second
 )
 
@@ -33,37 +18,9 @@ var (
 	/*
 		URL para subir os tempos.
 	*/
-	UrlTempos = fmt.Sprintf("http://%s/receive/tempos", os.Getenv("MYTEMPO_API_URL"))
-
-	dbMx sync.Mutex
+	UrlTempos = fmt.Sprintf(
+		"http://%s/receive/tempos", os.Getenv("MYTEMPO_API_URL"))
 )
-
-// DEPRECATED: this is useless
-func (reenvio *Reenvio) ArmazenarAtletas(atletas []Atleta) {
-
-	dbMx.Lock()
-	defer dbMx.Unlock()
-
-	for _, atleta := range atletas {
-
-		_, err := reenvio.db.Exec(
-			ARMAZENA_ATLETA_QUERY,
-
-			atleta.Antena,
-			atleta.Check,
-			atleta.Numero,
-			atleta.Tempo,
-			atleta.Staff,
-			atleta.PercursoID,
-		)
-
-		if err != nil {
-
-			// XXX: Remover logs excessivos
-			log.Printf("Falha no envio e na inserção do atleta %+v, com erro %s\n", atleta, err)
-		}
-	}
-}
 
 /*
 	{
@@ -94,6 +51,20 @@ func (reenvio *Reenvio) Upload(atletas []Atleta) {
 		return
 	}
 
+	if reenvio.Equip.ID == 0 {
+
+		log.Println("Equipamento inválido! (0)")
+
+		return
+	}
+
+	if reenvio.Equip.ProvaID == 0 {
+
+		log.Println("Prova inválida! (0)")
+
+		return
+	}
+
 	dados := AtletasForm{
 		reenvio.Equip.ID,
 		reenvio.Equip.ProvaID,
@@ -119,14 +90,7 @@ func (reenvio *Reenvio) Upload(atletas []Atleta) {
 
 	if uploadErr != nil {
 
-		log.Printf("Tentativa de reenvio de um lote falhou. Armazenando no banco de dados (erro: %s)\n", uploadErr)
-
-		/*
-			Erro no envio dos atletas, inserir no banco de dados
-			TODO.
-		*/
-
-		//reenvio.ArmazenarAtletas(atletas)
+		log.Printf("Tentativa de reenvio de um lote falhou. (erro: %s)\n", uploadErr)
 	}
 
 	return
@@ -144,16 +108,15 @@ em caso de erro, redireciona para o Banco de Dados.
 func (reenvio *Reenvio) TentarReenvio() {
 
 	var (
-		inválidos []Atleta
+		tempos []Atleta
 	)
 
 	/*
-		Envia um lote de cada um (Inválidos e Não Enviados [Monitoramento]).
+		Envia um lote.
 	*/
 
 	/*
 		Criar o timeout para o monitoramento.
-
 		define o tempo gasto esperando um tempo vir da lista.
 	*/
 	timeoutMon := time.After(
@@ -161,13 +124,12 @@ func (reenvio *Reenvio) TentarReenvio() {
 	)
 
 	/*
-		Se houver registros inválidos, receba.
+		Se houver registros, receba.
 		Caso contrário, não bloqueie o código.
 	*/
-
 	select {
-	case inválidos = <-reenvio.Atletas:
-		reenvio.Upload(inválidos)
+	case tempos = <-reenvio.Atletas:
+		reenvio.Upload(tempos)
 
 	case <-timeoutMon:
 		log.Println("Timeout, deixando para enviar depois")
@@ -183,7 +145,7 @@ ter 17 set 2024 09:31:40 -03
 Inicia o loop de conexão com a API, reenviando atletas
 dentro da queue de reenvio.
 */
-func (r *Reenvio) LoopReenvio(timerEnvio *time.Ticker) {
+func (r *Reenvio) EnviaLoop(timerEnvio *time.Ticker) {
 
 	/*
 		A cada minuto é feito o reenvio de todos

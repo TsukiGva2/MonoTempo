@@ -6,25 +6,68 @@ import (
 )
 
 const (
-	QUERY_ATLETAS_LARGADA = `SELECT athlete_num,
-					athlete_time,
-					athlete_time,
-					checkpoint_id,
-					antenna,
-					staff,
-					event_id,
-					track_id
-				FROM resultados_largada`
+	// QUERY_ATLETAS_LARGADA = `SELECT athlete_num,
+	//
+	//		athlete_time,
+	//		athlete_time,
+	//		checkpoint_id,
+	//		antenna,
+	//		staff,
+	//		event_id,
+	//		track_id
+	//	FROM resultados_largada`
+	// QUERY_ATLETAS_CHEGADA = `SELECT athlete_num,
+	//
+	//		athlete_time,
+	//		athlete_time,
+	//		checkpoint_id,
+	//		antenna,
+	//		staff,
+	//		event_id,
+	//		track_id
+	//	FROM resultados_largada`
 
-	QUERY_ATLETAS_CHEGADA = `SELECT athlete_num,
-					athlete_time,
-					athlete_time,
-					checkpoint_id,
-					antenna,
-					staff,
-					event_id,
-					track_id
-				FROM resultados_largada`
+	QUERY_ATLETAS_LARGADA = `
+SELECT
+    athlete_num,
+    MAX(athlete_time) AS athlete_time,
+    checkpoint_id,
+    antenna,
+    staff,
+    tracks.event_id,
+    tracks.id
+FROM
+    athletes_times
+JOIN athletes ON athlete_num = athletes.num
+JOIN tracks ON tracks.id = athletes.track_id
+WHERE
+    athlete_time > tracks.inicio AND
+    athlete_time < tracks.largada AND
+    tracks.id = {tid} AND
+    staff = 0
+GROUP BY
+    athlete_num, checkpoint_id, antenna, staff, tracks.event_id, tracks.id;`
+
+	QUERY_ATLETAS_CHEGADA = `
+SELECT
+    athlete_num,
+    MIN(athlete_time) AS athlete_time,
+    checkpoint_id,
+    antenna,
+    staff,
+    tracks.event_id,
+    tracks.id
+FROM
+    athletes_times
+JOIN athletes ON athlete_num = athletes.num
+JOIN tracks ON tracks.id = athletes.track_id
+WHERE
+    athlete_time > tracks.largada AND
+    athlete_time > tracks.chegada AND
+    tracks.id = {tid} AND
+    staff = 0
+GROUP BY
+    athlete_num, checkpoint_id, antenna, staff, tracks.event_id, tracks.id;`
 )
 
 /*
@@ -33,7 +76,7 @@ Renomear função para inválidos.
 
 func (reenvio *Reenvio) ColetaVálidos(query string) (err error, qtd int) {
 
-	res, err := reenvio.db.Query(query)
+	res, err := reenvio.tempos.Query(query)
 
 	if err != nil {
 		log.Println("Erro checando atletas disponíveis para largada", err)
@@ -65,6 +108,7 @@ func (reenvio *Reenvio) ColetaVálidos(query string) (err error, qtd int) {
 		)
 
 		if err != nil {
+
 			log.Println("Erro ao escanear os atletas: ", err)
 
 			break
@@ -75,13 +119,14 @@ func (reenvio *Reenvio) ColetaVálidos(query string) (err error, qtd int) {
 		qtd++
 	}
 
-	log.Println("Reenviando atletas")
+	log.Println("Coletando atletas para envio")
 
 	ReportarLoteAtletas(atletas)
 
 	err = res.Err()
 
 	if err != nil {
+
 		log.Println("Erro ao escanear os atletas: ", err)
 
 		return
@@ -95,10 +140,9 @@ func (reenvio *Reenvio) ColetaVálidos(query string) (err error, qtd int) {
 	return
 }
 
-func (reenvio *Reenvio) EnviaLoop(timerEnvio *time.Ticker) {
+func (reenvio *Reenvio) PreparaLoop(timerEnvio *time.Ticker) {
 
 	go func() {
-		log.Println("Aguardando percursos da prova")
 
 		próximoEnvio := timerEnvio.C
 
@@ -112,14 +156,14 @@ func (reenvio *Reenvio) EnviaLoop(timerEnvio *time.Ticker) {
 
 				if err != nil {
 
-					log.Println("Erro ao enviar:", err)
+					log.Println("Erro ao preparar largada:", err)
 				}
 
 				err, _ = reenvio.ColetaVálidos(QUERY_ATLETAS_CHEGADA)
 
 				if err != nil {
 
-					log.Println("Erro ao enviar:", err)
+					log.Println("Erro ao preparar chegada:", err)
 				}
 			}()
 		}

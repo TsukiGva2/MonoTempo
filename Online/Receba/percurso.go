@@ -1,7 +1,5 @@
 package main
 
-import "log"
-
 /*
 	"percursos": [
 	        {
@@ -22,23 +20,6 @@ type Percurso struct {
 	Inicio  Tempo  `json:"horaDaLargada"`
 	Largada Tempo  `json:"fimDaLargada"`
 	Chegada Tempo  `json:"tempoMinimoParaChegada"`
-}
-
-func (r *Receba) LimpaPercursosForaDaProva(provaID int) {
-
-	if provaID == 0 {
-
-		return
-	}
-
-	_, err := r.db.Exec(
-		QUERY_LIMPA_TODOS_PERCURSOS_FORA_DA_PROVA,
-		provaID,
-	)
-
-	if err != nil {
-		log.Println(err)
-	}
 }
 
 func (r *Receba) AtualizaPercurso(p Percurso, idProva int) (err error) {

@@ -2,14 +2,13 @@ package main
 
 import (
 	"database/sql"
-
-	mysql "github.com/mytempoesp/mysql-easy"
-	rabbit "github.com/mytempoesp/rabbit"
+	//rabbit "github.com/mytempoesp/rabbit"
 )
 
 type Reenvio struct {
-	broker rabbit.Rabbit
-	db     *sql.DB
+	//broker rabbit.Rabbit
+
+	tempos *sql.DB
 
 	Equip Equipamento
 
@@ -35,13 +34,4 @@ type Reenvio struct {
 			- É um tempo de Largada.
 	*/
 	Atletas chan []Atleta
-}
-
-func (reenvio *Reenvio) ConfiguraDB() (err error) {
-
-	db, err := mysql.ConfiguraDB()
-
-	reenvio.db = db
-
-	return
 }

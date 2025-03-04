@@ -6,13 +6,6 @@ import (
 	"os"
 )
 
-func (r *Receba) ConfiguraDB() (err error) {
-
-	r.db = db
-
-	return
-}
-
 func (r *Receba) FechaDB() {
 
 	r.db.Close()
@@ -50,10 +43,6 @@ func (r *Receba) Atualiza() {
 
 		return
 	}
-
-	/* NOTE: Função +- testada. */
-	r.LimpaStaffsForaDaProva(equip.ProvaID)
-	r.LimpaPercursosForaDaProva(equip.ProvaID)
 
 	/* debug */
 	log.Println("Atualizando equip:")
@@ -147,19 +136,17 @@ func (r *Receba) AtualizarAtletas() {
 		oportuno ou até mesmo checar se a mesma já foi
 		chamada. ( Reenvio )
 	*/
-	r.Limpar24h()
 
 	r.ConfiguraAPI(os.Getenv("MYTEMPO_API_URL"))
 
 	equip, err := r.BuscaEquip(os.Getenv("MYTEMPO_EQUIP"))
 
 	if err != nil {
+
 		log.Println(err)
+
 		return
 	}
-
-	/* NOTE: Função +- testada, use com cuidado. */
-	r.LimpaAtletasForaDaProva(equip.ProvaID)
 
 	atletas, err := r.BuscaAtletas(equip.ProvaID)
 

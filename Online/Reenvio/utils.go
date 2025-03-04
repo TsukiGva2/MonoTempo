@@ -1,56 +1,8 @@
 package main
 
 import (
-	"encoding/json"
-
 	"log"
 )
-
-/*
-# AtletasFromJSON
-
-recebe uma body em json "marshal-izado", no formato:
-
-```
-
-	[]byte(
-		`[
-		   {
-		      tempo         ,
-		      antena        ,
-		      numero        ,
-		      percurso      ,
-		      staff         ,
-		      checkpoint_id ,
-		   }
-		]`,
-	)
-
-```
-
-e converte para []Atleta, cuja expansão é algo parecido com:
-
-```
-
-	[]struct{
-		Tempo      string `json:"tempo"`
-		Antena     int    `json:"antena"`
-		Numero     int    `json:"numero"`
-		PercursoID int    `json:"percurso"`
-		Staff      int    `json:"staff"`
-		Check      int    `json:"checkpoint_id"`
-
-		...
-	}
-
-```
-*/
-func AtletasFromJSON(body []byte) (atletas []Atleta, err error) {
-
-	err = json.Unmarshal(body, &atletas)
-
-	return
-}
 
 /*
 By Rodrigo Monteiro Junior

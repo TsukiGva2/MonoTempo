@@ -1,17 +1,8 @@
 #!/bin/sh
 
-#cp NetworkManager-config/system-connections/* /etc/NetworkManager/system-connections
-
-#pacman -Sy dosfstools
-
-git pull
-
-#git submodule update --init --recursive --remote
-
-#mkfifo ./wifi-connection
-#chmod 0666 ./wifi-connection
-
-#docker compose up --build
-
-mkdir -p /var/lib/MONOTEMPO-docker/database/
+rm -f database/*
+for i in schemas/*; do
+	filename=$(basename $i)
+	cat $i | sqlite3 database/${filename%.*}.db
+done
 

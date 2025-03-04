@@ -22,7 +22,7 @@ services:
       - db
     env_file: ../shared.env
     volumes:
-      - /var/lib/MONOTEMPO-docker/database:/var/monotempo-data
+      - ../database:/var/monotempo-data
 
   aa2:
     container_name: aa2
@@ -37,7 +37,7 @@ services:
       - AA2/aa2.env
       - ../shared.env
     volumes:
-      - /var/lib/MONOTEMPO-docker/database:/var/monotempo-data
+      - ../database:/var/monotempo-data
       - /dev:/dev
       - /etc/localtime:/etc/localtime:ro
       - /tmp:/tmp

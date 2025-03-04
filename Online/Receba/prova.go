@@ -42,6 +42,7 @@ func (r *Receba) AtualizaProva(prova Prova) (err error) {
 
 	// atualiza cada percurso individualmente
 	for _, percurso := range prova.Percursos {
+
 		err = r.AtualizaPercurso(percurso, prova.ID)
 	}
 
