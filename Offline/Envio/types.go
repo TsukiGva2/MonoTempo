@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"envio/dbman"
 
 	rabbit "github.com/mytempoesp/rabbit"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -19,12 +19,7 @@ type tag struct {
 type Envio struct {
 	broker  rabbit.Rabbit
 	channel *amqp.Channel
-	db      *sql.DB
+	Tags    <-chan tag
 
-	Tags <-chan tag
-
-	NomeArquivoTempAtletas string // nome do arquivo temporario para guardar batch de atletas
-
-	FilaAtletasVálidos   chan string
-	FilaAtletasInválidos chan string
+	DBManager dbman.MADB
 }

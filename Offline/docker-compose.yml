@@ -19,7 +19,6 @@ services:
       context: Envio
     depends_on:
       - rabbitmq
-      - db
     env_file: ../shared.env
     volumes:
       - ../database:/var/monotempo-data
@@ -32,7 +31,6 @@ services:
       context: AA2
     depends_on:
       - rabbitmq
-      - db
     env_file:
       - AA2/aa2.env
       - ../shared.env
@@ -51,6 +49,5 @@ services:
       driver: none
     depends_on:
       - rabbitmq
-      - db
     env_file: ../shared.env
 

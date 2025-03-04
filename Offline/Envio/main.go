@@ -61,14 +61,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = envio.SetupDatabase()
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer envio.CloseDatabase()
-
 		err = envio.CreateBindings()
 
 		if err != nil {
@@ -81,11 +73,9 @@ func main() {
 			log.Fatal(err)
 		}
 
-		envio.FilaAtletasVálidos = make(chan string)
-		envio.FilaAtletasInválidos = make(chan string)
+		envio.DBManager.GroupSize(20)
 
 		go envio.Process()
-		go envio.SalvaLotes()
 
 		channelClosed := make(chan *amqp.Error)
 		brokerClosed := make(chan *amqp.Error)

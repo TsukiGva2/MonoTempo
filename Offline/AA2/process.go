@@ -55,20 +55,6 @@ func (a *Ay) Process() {
 		}
 	}()
 
-	/*
-		Resetting the tags:
-
-		TODO: add a clear method of
-		resetting tags on the database
-
-		tagSet.Clear()
-		tags.Store(0)
-		for i := range 4 {
-			antennas[i].Store(0)
-		}
-
-	*/
-
 	var device = usb.Device{}
 
 	device.Name = "/dev/sdb"
@@ -87,8 +73,6 @@ func (a *Ay) Process() {
 
 		return
 	}
-
-	//os.Setenv("TZ", "Brazil/East")
 
 	go func() {
 

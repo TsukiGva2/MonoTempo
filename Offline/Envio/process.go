@@ -1,34 +1,8 @@
 package main
 
 import (
-	"log"
+	"envio/athlete"
 )
-
-func (envio *Envio) ChecaValidade(numero int) (válido bool, err error) {
-
-	query := `
-SELECT num FROM athletes WHERE num = ?
-`
-
-	válido = false
-
-	// reseba!!!!!!!
-	res, err := envio.db.Query(query, numero)
-
-	if err != nil {
-		return
-	}
-
-	defer res.Close()
-
-	if res.Next() {
-		válido = true
-	}
-
-	err = res.Err()
-
-	return
-}
 
 func (envio *Envio) Process() {
 
@@ -46,35 +20,12 @@ func (envio *Envio) Process() {
 			continue
 		}
 
-		//tempoAtleta, err := time.Parse(t.TempoFormato, t.TempoFormatado)
-
-		/*
-			lógica pra descobrir a Prova e o Percurso do atleta
-			se não encontrado um deles, salvar como inválido.
-		*/
-
-		válido, err := envio.ChecaValidade(t.Epc)
-
-		if err != nil {
-			log.Printf("Erro ao obter percurso/prova do atleta %d: %+v\n", t.Epc, err)
-
-			continue
-		}
-
-		at := Atleta{
+		at := athlete.Atleta{
 			Antena: t.Antena,         /* Antena    */
 			Numero: t.Epc,            /* Numero    */
 			Staff:  t.Staff,          /* Staff     */
 			Tempo:  t.TempoFormatado, /* Tempo     */
 			Check:  0,                /* Check     */ //TODO
-		}
-
-		if !válido {
-
-			envio.SalvarAtletaInvalido(&at)
-
-			/* Atleta sem prova/percurso, ignorando */
-			continue
 		}
 
 		/*

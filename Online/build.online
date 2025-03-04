@@ -1,0 +1,10 @@
+#!/bin/sh
+
+cd Receba
+docker build --tag="receba:1.0" .
+
+cd ../Reenvio
+docker build --tag="reenvio:1.0" .
+
+cd ..
+
