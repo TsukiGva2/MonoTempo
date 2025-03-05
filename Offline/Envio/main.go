@@ -77,6 +77,9 @@ func main() {
 		}
 
 		envio.DBManager.GroupSize(10)
+
+		envio.DBManager.DatabaseRoot = "/var/monotempo-data"
+
 		envio.DBManager.Init()
 
 		go envio.Process()
