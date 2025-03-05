@@ -1,6 +1,7 @@
 package dbman
 
 import (
+	"time"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,8 @@ import (
 	"database/sql"
 	"envio/athlete"
 	_ "modernc.org/sqlite"
+
+	backoff "github.com/cenkalti/backoff"
 )
 
 type Baselet struct {
@@ -102,14 +105,31 @@ func (b *Baselet) Monitor() chan<- athlete.Atleta {
 	go func() {
 		for c := range data {
 
-			b.db.Exec(
-				INSERT_TIME,
+			bf := backoff.NewExponentialBackOff()
+			bf.MaxElapsedTime = 250 * time.Millisecond
 
-				c.Antena,
-				c.Numero,
-				c.Staff,
-				c.Tempo,
+			err := backoff.Retry(
+				func() (err error) {
+
+					_, err = b.db.Exec(
+						INSERT_TIME,
+
+						c.Antena,
+						c.Numero,
+						c.Staff,
+						c.Tempo,
+					)
+
+					return
+				},
+
+				bf,
 			)
+
+			if err != nil {
+
+				log.Printf("Could not store time '%s' of athlete '%d'\n", c.Tempo, c.Numero)
+			}
 		}
 	}()
 
