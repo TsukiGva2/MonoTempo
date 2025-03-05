@@ -65,6 +65,7 @@ func (b *Baselet) Init() (err error) {
 	}
 
 	b.db = db
+	b.opened = false
 
 	return
 }
@@ -99,10 +100,16 @@ func (b *Baselet) Insert(c athlete.Atleta) (err error) {
 
 	if err != nil {
 
+		err = b.Init()
+
 		return
 	}
 
-	b.data <- c
+	select {
+	case b.data <- c:
+	case <-time.After(2100 * time.Millisecond):
+		b.Close()
+	}
 
 	return
 }
@@ -145,36 +152,12 @@ func (b *Baselet) Monitor() chan<- athlete.Atleta {
 				log.Printf("Could not store time '%s' of athlete '%d'\n", c.Tempo, c.Numero)
 				log.Printf("| Restarting baselet ID='%s'\n", b.Path)
 
-				defer b.reOpen()
-
-				break
+				return
 			}
 		}
 	}()
 
 	return data
-}
-
-func (b *Baselet) reOpen() {
-
-	b.Close()
-
-	err := b.Open()
-
-	if err != nil {
-
-		// reinit it
-		err = b.Init()
-
-		if err != nil {
-
-			log.Printf("Baselet ID='%s' is dead.\n", b.Path)
-		}
-
-		return
-	}
-
-	log.Printf("Baselet ID='%s' is back up\n", b.Path)
 }
 
 func (b *Baselet) Close() {
