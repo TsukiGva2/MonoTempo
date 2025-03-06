@@ -1,12 +1,13 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
+	"log"
 	"os"
 	"time"
 
-	"fmt"
-	"log"
+	"encoding/json"
+	"github.com/MyTempoESP/Reenvio/atleta"
 )
 
 const (
@@ -37,12 +38,12 @@ var (
 	}
 */
 type AtletasForm struct {
-	EquipamentoId int      `json:"equipamentoId"`
-	ProvaId       int      `json:"provaId"`
-	Atletas       []Atleta `json:"atletas"`
+	EquipamentoId int             `json:"equipamentoId"`
+	ProvaId       int             `json:"provaId"`
+	Atletas       []atleta.Atleta `json:"atletas"`
 }
 
-func (reenvio *Reenvio) Upload(atletas []Atleta) {
+func (reenvio *Reenvio) Upload(atletas []atleta.Atleta) {
 
 	if len(atletas) == 0 {
 
@@ -107,9 +108,7 @@ em caso de erro, redireciona para o Banco de Dados.
 */
 func (reenvio *Reenvio) TentarReenvio() {
 
-	var (
-		tempos []Atleta
-	)
+	//var ( tempos []atleta.Atleta ) TODO
 
 	/*
 		Envia um lote.
@@ -128,8 +127,8 @@ func (reenvio *Reenvio) TentarReenvio() {
 		Caso contrário, não bloqueie o código.
 	*/
 	select {
-	case tempos = <-reenvio.Atletas:
-		reenvio.Upload(tempos)
+	//case tempos = <-reenvio.Atletas: // TODO
+	//reenvio.Upload(tempos) // TODO
 
 	case <-timeoutMon:
 		log.Println("Timeout, deixando para enviar depois")

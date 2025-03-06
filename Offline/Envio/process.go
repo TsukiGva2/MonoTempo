@@ -25,7 +25,6 @@ func (envio *Envio) Process() {
 			Numero: t.Epc,            /* Numero    */
 			Staff:  t.Staff,          /* Staff     */
 			Tempo:  t.TempoFormatado, /* Tempo     */
-			Check:  0,                /* Check     */ //TODO
 		}
 
 		/*

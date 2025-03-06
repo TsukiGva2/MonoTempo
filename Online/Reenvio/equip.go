@@ -1,20 +1,20 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"time"
+
+	"database/sql"
+	"github.com/MyTempoESP/Reenvio/atleta"
+	_ "modernc.org/sqlite"
 )
 
 type Equipamento struct {
 	ID      int
 	Nome    string
 	ProvaID int
-}
 
-const (
-	ATUALIZA_EQUIP_INTERVALO = 1 * time.Minute
-)
+	Atletas []atleta.Atleta
+}
 
 func (equip *Equipamento) Atualiza() (err error) {
 

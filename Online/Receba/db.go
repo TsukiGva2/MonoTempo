@@ -7,7 +7,7 @@ import (
 
 func (r *Receba) ConfiguraDB() (err error) {
 
-	db, err := sql.Open("sqlite", "/var/monotempo-data/equipamento.sqlite")
+	db, err := sql.Open("sqlite", "/var/monotempo-data/equipamento.db")
 
 	if err != nil {
 

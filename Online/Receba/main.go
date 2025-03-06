@@ -90,14 +90,17 @@ func (r *Receba) Atualiza() {
 		• Staff [ ] ERRO
 	*/
 
-	err = r.EnviarInfo(equip.ID)
+	// TODO: Report to website
+	/*
+		err = r.EnviarInfo(equip.ID)
 
-	if err != nil {
+		if err != nil {
 
-		log.Println(err)
+			log.Println(err)
 
-		return
-	}
+			return
+		}
+	*/
 
 	/* debug */
 	log.Println("Buscando staffs:")

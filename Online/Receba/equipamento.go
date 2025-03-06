@@ -1,10 +1,9 @@
 package main
 
 type Equipamento struct {
-	ID           int    `json:"id"`
-	Nome         string `json:"modelo"`
-	ProvaID      int    `json:"assocProva"`
-	CheckpointID int    `json:"assocCheck"`
+	ID      int    `json:"id"`
+	Nome    string `json:"modelo"`
+	ProvaID int    `json:"assocProva"`
 }
 
 func (r *Receba) BuscaEquip(equipModelo string) (equip Equipamento, err error) {
