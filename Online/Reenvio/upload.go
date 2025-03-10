@@ -47,7 +47,7 @@ func (reenvio *Reenvio) Upload(atletas []atleta.Atleta) (err error) {
 
 	if len(atletas) == 0 {
 
-		err = fmt.Errorf("Ignorando lote vazio de atletas para reenvio.\n")
+		log.Println("Ignorando lote vazio de atletas para reenvio.")
 
 		return
 	}
