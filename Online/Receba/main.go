@@ -131,15 +131,6 @@ func (r *Receba) AtualizarAtletas() {
 
 	IgnorarForeignKey(r.db)
 
-	/*
-		XXX: Esta função apaga todos os tempos
-		salvos para reenvio uma vez por dia.
-
-		TODO: seria ideal posicioná-la em um lugar mais
-		oportuno ou até mesmo checar se a mesma já foi
-		chamada. ( Reenvio )
-	*/
-
 	r.ConfiguraAPI(os.Getenv("MYTEMPO_API_URL"))
 
 	equip, err := r.BuscaEquip(os.Getenv("MYTEMPO_EQUIP"))
