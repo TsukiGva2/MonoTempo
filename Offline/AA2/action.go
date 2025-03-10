@@ -8,6 +8,7 @@ import (
 	c "aa2/constant"
 	file "aa2/file"
 	usb "aa2/usb"
+	"os/exec"
 )
 
 func ResetarTudo() (err error) {
@@ -15,6 +16,11 @@ func ResetarTudo() (err error) {
 	// delete entire times database
 
 	return
+}
+
+func UploadData() {
+	cmd := exec.Command("sh -c", "echo 'a' > /var/monotempo-data/sig-upload-data")
+	cmd.Run()
 }
 
 func CopyToUSB(device *usb.Device, file *file.File) (err error) {

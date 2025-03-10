@@ -169,7 +169,8 @@ func (a *Ay) Process() {
 				err = nil
 
 				switch action {
-				case lcdlogger.ACTION_WIFI: /* empty */
+				case lcdlogger.ACTION_WIFI:
+					UploadData()
 				case lcdlogger.ACTION_TIME: /* empty */
 				case lcdlogger.ACTION_RESET:
 					{
@@ -205,9 +206,9 @@ func (a *Ay) Process() {
 
 						if err == nil {
 
-							t := tagsUSB.Load()
+							tagsUSB.Load()
 
-							<-time.After(time.Duration(4+int(t/1000)) * time.Second)
+							<-time.After(5 * time.Second)
 
 							tagsUSB.Store(0)
 						}
