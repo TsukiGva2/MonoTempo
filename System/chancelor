@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# mytempo directory
+MYTEMPO_DATA=
+
+while true;
+do
+	$MYTEMPO_DATA/Offline/setup.offline
+
+	# wait for a signal
+	read < $MYTEMPO_DATA/database/sig-upload-data
+
+	$MYTEMPO_DATA/Offline/stop.offline
+	$MYTEMPO_DATA/Online/setup.online
+	
+	sleep 5
+done
+
