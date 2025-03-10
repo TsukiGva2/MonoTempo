@@ -43,23 +43,7 @@ func (b *Baselet) Init() (err error) {
 		return
 	}
 
-	err = b.loadEnvironment()
-
-	if err != nil {
-
-		log.Printf("Error loading track data: %s\n", err)
-
-		return
-	}
-
 	b.beginMonitor()
-
-	return
-}
-
-func (b *Baselet) loadEnvironment() (err error) {
-
-	_, err = b.db.Exec(ATTACH)
 
 	return
 }
@@ -102,6 +86,8 @@ func (b *Baselet) Monitor() (largada, chegada <-chan atleta.Atleta) {
 
 		defer func() { close(l) }()
 
+		b.db.Exec(ATTACH)
+
 		res, err := b.db.Query(QUERY_LARGADA)
 
 		if err != nil {
@@ -131,6 +117,8 @@ func (b *Baselet) Monitor() (largada, chegada <-chan atleta.Atleta) {
 				break
 			}
 
+			log.Println(at)
+
 			l <- at
 		}
 
@@ -147,6 +135,8 @@ func (b *Baselet) Monitor() (largada, chegada <-chan atleta.Atleta) {
 	go func() {
 
 		defer func() { close(c) }()
+
+		b.db.Exec(ATTACH)
 
 		res, err := b.db.Query(QUERY_CHEGADA)
 
@@ -176,6 +166,8 @@ func (b *Baselet) Monitor() (largada, chegada <-chan atleta.Atleta) {
 
 				break
 			}
+
+			log.Println(at)
 
 			c <- at
 		}

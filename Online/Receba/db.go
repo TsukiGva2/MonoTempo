@@ -1,11 +1,15 @@
 package main
 
 import (
+	"os"
+
 	"database/sql"
 	_ "modernc.org/sqlite"
 )
 
 func (r *Receba) ConfiguraDB() (err error) {
+
+	os.Remove("/var/monotempo-data/equipamento.db")
 
 	db, err := sql.Open("sqlite", "/var/monotempo-data/equipamento.db")
 
@@ -15,6 +19,15 @@ func (r *Receba) ConfiguraDB() (err error) {
 	}
 
 	_, err = db.Exec(CRIA_DB)
+
+	if err != nil {
+
+		return
+	}
+
+	db.Close()
+
+	db, err = sql.Open("sqlite", "/var/monotempo-data/equipamento.db")
 
 	if err != nil {
 
