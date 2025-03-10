@@ -137,12 +137,12 @@ func (reenvio *Reenvio) TentarReenvio(lotes <-chan []atleta.Atleta) (err error) 
 				return
 			}
 
-			err = reenvio.Upload(tempos)
+			//err = reenvio.Upload(tempos)
+			log.Println(tempos)
 
-			if err != nil {
-
-				return
-			}
+			//if err != nil {
+			//	return
+			//}
 		case <-timeoutMon:
 			err = fmt.Errorf("Timeout, deixando para enviar depois")
 			return

@@ -117,8 +117,6 @@ func (b *Baselet) Monitor() (largada, chegada <-chan atleta.Atleta) {
 				break
 			}
 
-			log.Println(at)
-
 			l <- at
 		}
 
@@ -167,8 +165,6 @@ func (b *Baselet) Monitor() (largada, chegada <-chan atleta.Atleta) {
 				break
 			}
 
-			log.Println(at)
-
 			c <- at
 		}
 
@@ -210,6 +206,8 @@ func (b *Baselet) Get() (atletas []atleta.Atleta, err error) {
 			break
 		}
 
+		log.Println("Athletes: ", atletas)
+
 		atletas = append(atletas, data)
 	}
 
@@ -244,6 +242,8 @@ func (m *MADB) Get() (lotes <-chan []atleta.Atleta) {
 
 				continue
 			}
+
+			log.Println("Got: ", lote)
 
 			l <- lote
 		}

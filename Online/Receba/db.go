@@ -25,15 +25,6 @@ func (r *Receba) ConfiguraDB() (err error) {
 		return
 	}
 
-	db.Close()
-
-	db, err = sql.Open("sqlite", "/var/monotempo-data/equipamento.db")
-
-	if err != nil {
-
-		return
-	}
-
 	r.db = db
 
 	return
