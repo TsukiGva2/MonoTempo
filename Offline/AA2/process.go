@@ -171,8 +171,10 @@ func (a *Ay) Process() {
 				switch action {
 				case lcdlogger.ACTION_WIFI:
 					UploadData()
-					select{}
+					select {}
 				case lcdlogger.ACTION_TIME: /* empty */
+					UploadBackup()
+					select {}
 				case lcdlogger.ACTION_RESET:
 					{
 						hasKey := display.WaitKeyPress(5 * time.Second)
