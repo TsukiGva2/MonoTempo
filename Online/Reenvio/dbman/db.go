@@ -1,8 +1,10 @@
 package dbman
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"database/sql"
 	"github.com/MyTempoESP/Reenvio/atleta"
@@ -51,6 +53,13 @@ func (b *Baselet) Init() (err error) {
 func (b *Baselet) Open() (err error) {
 
 	if b.opened {
+
+		return
+	}
+
+	if _, err = os.Stat(b.Path); errors.Is(err, os.ErrNotExist) {
+
+		log.Printf("Arquivo inexistente: %s\n", b.Path)
 
 		return
 	}
