@@ -2,6 +2,7 @@
 
 test -e database || mkdir database
 test -e database/backup || mkdir database/backup
+test -e database/envio || mkdir database/envio
 test -e database/sig-upload-data || mkfifo database/sig-upload-data
 
 # fixed chancelor to local bin
