@@ -105,18 +105,6 @@ func (a *Ay) Process() {
 					/* IP         */ readerOctets,
 					/* leitor OK? */ ok,
 				)
-			case lcdlogger.SCREEN_WIFI:
-
-				wifi := flick.DESLIGAD
-				lte := flick.DESLIGAD
-
-				display.ScreenWifi(
-					NUM_EQUIP,
-					commVerif,
-					/* WIFI */ wifi,
-					/* 4G   */ lte,
-					-1,
-				)
 			case lcdlogger.SCREEN_STAT:
 				display.ScreenStat(
 					NUM_EQUIP,

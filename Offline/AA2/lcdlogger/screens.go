@@ -13,7 +13,6 @@ import (
 const (
 	SCREEN_TAGS = iota
 	SCREEN_ADDR
-	SCREEN_WIFI
 	SCREEN_STAT
 	SCREEN_TIME
 	SCREEN_USB
@@ -86,23 +85,6 @@ func (display *SerialDisplay) ScreenAddr(nome, commVerif int, ip IPOctets, leito
 	)
 }
 
-func (display *SerialDisplay) ScreenWifi(nome, commVerif, wifiVerif, LTE4GVerif int, wifiPing int64) {
-
-	display.DrawScreen(
-		fmt.Sprintf(
-			"%d lbl %d num"+
-				" %d lbl %d val"+
-				" %d lbl %d val"+
-				" %d lbl %d ms",
-
-			flick.PORTAL, nome      ,
-			flick.WIFI  , wifiVerif ,
-			flick.LTE4G , LTE4GVerif,
-			flick.PING  , wifiPing  ,
-		),
-	)
-}
-
 func (display *SerialDisplay) ScreenStat(nome, commVerif int, a1, a2, a3, a4 ForthNumber) {
 
 	display.DrawScreen(
@@ -114,12 +96,12 @@ func (display *SerialDisplay) ScreenStat(nome, commVerif int, a1, a2, a3, a4 For
 				" %d %d atn"+ // A1 Val+Mag then display
 				" %d lbl %d val",
 
-			flick.PORTAL , nome        ,
-			a4.Value     , a4.Magnitude,
-			a3.Value     , a3.Magnitude,
-			a2.Value     , a2.Magnitude,
-			a1.Value     , a1.Magnitude,
-			LABEL_OFFLINE, 6           ,
+			flick.PORTAL, nome,
+			a4.Value, a4.Magnitude,
+			a3.Value, a3.Magnitude,
+			a2.Value, a2.Magnitude,
+			a1.Value, a1.Magnitude,
+			LABEL_OFFLINE, 6,
 		),
 	)
 }
@@ -148,10 +130,10 @@ func (display *SerialDisplay) ScreenTime(nome, commVerif int) {
 
 				" %d lbl %d val",
 
-			flick.PORTAL , nome                      ,
-			now.Hour()   , now.Minute(), now.Second(),
-			d            , m           , y           ,
-			LABEL_OFFLINE, 6                         ,
+			flick.PORTAL, nome,
+			now.Hour(), now.Minute(), now.Second(),
+			d, m, y,
+			LABEL_OFFLINE, 6,
 		),
 	)
 }
@@ -165,9 +147,9 @@ func (display *SerialDisplay) ScreenUSB(nome, commVerif int, devVerif int) {
 				" fwd"+
 				" %d lbl %d val",
 
-			flick.PORTAL ,nome,
-			devVerif          ,
-			LABEL_OFFLINE, 6  ,
+			flick.PORTAL, nome,
+			devVerif,
+			LABEL_OFFLINE, 6,
 		),
 	)
 }
@@ -183,9 +165,9 @@ func (display *SerialDisplay) ScreenInfoEquip(nome int) {
 				" %d lbl $%s hex",
 
 			flick.PORTAL, nome,
-			LABEL_RFID  , c.Reader,
-			LABEL_SERIE , c.Serie,
-			LABEL_SIST  , c.Version,
+			LABEL_RFID, c.Reader,
+			LABEL_SERIE, c.Serie,
+			LABEL_SIST, c.Version,
 		),
 	)
 }
@@ -200,7 +182,7 @@ func (display *SerialDisplay) ScreenConfirmaUpload() {
 }
 
 func (display *SerialDisplay) ScreenConfirmaUploadBackup() {
-	
+
 	display.DrawScreen(
 		fmt.Sprintf(
 			"%d lbl fwd %d lbl fwd %d lbl fwd fwd",
@@ -257,4 +239,3 @@ func (display *SerialDisplay) ScreenErr() {
 		),
 	)
 }
-
