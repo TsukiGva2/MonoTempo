@@ -1,5 +1,8 @@
 #!/bin/sh
 
+test -e shared.env || cp shared.env.in shared.env
+test -e Offline/AA2/aa2.env || cp Offline/AA2/aa2.env.in Offline/AA2/aa2.env
+
 test -e database || mkdir database
 test -e database/backup || mkdir database/backup
 test -e database/envio || mkdir database/envio
