@@ -5,7 +5,7 @@ import (
 	"time"
 
 	//"aa2/lcdlogger"
-	"github.com/prometheus-community/pro-bing"
+	probing "github.com/prometheus-community/pro-bing"
 )
 
 func NewPinger(ip string, state *atomic.Bool, ping *atomic.Int64) {
@@ -24,12 +24,16 @@ func NewPinger(ip string, state *atomic.Bool, ping *atomic.Int64) {
 
 	p.OnSend = func(pkt *probing.Packet) {
 
-		state.Store(false)
+		if state != nil {
+			state.Store(false)
+		}
 	}
 
 	p.OnRecv = func(pkt *probing.Packet) {
 
-		state.Store(true)
+		if state != nil {
+			state.Store(true)
+		}
 
 		if ping != nil {
 

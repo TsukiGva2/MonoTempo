@@ -63,9 +63,12 @@ func (a *Ay) Process() {
 	var readerIP = os.Getenv("READER_IP")
 	var readerOctets = lcdlogger.IPIfy(readerIP)
 	var readerState atomic.Bool
+
+	var netPing atomic.Int64
 	//var readerPing atomic.Int64
 
 	go pinger.NewPinger(readerIP, &readerState, nil)
+	go pinger.NewPinger("mytempo.esp.br", nil, &netPing)
 
 	display, displayErr := lcdlogger.NewSerialDisplay()
 
@@ -104,6 +107,7 @@ func (a *Ay) Process() {
 					commVerif,
 					/* IP         */ readerOctets,
 					/* leitor OK? */ ok,
+					netPing.Load(),
 				)
 			case lcdlogger.SCREEN_STAT:
 				display.ScreenStat(

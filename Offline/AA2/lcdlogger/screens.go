@@ -66,7 +66,7 @@ func (display *SerialDisplay) ScreenTags(nome, commVerif int, tags, tagsUnicas F
 	)
 }
 
-func (display *SerialDisplay) ScreenAddr(nome, commVerif int, ip IPOctets, leitorOk int) {
+func (display *SerialDisplay) ScreenAddr(nome, commVerif int, ip IPOctets, leitorOk int, LTE4GPING int64) {
 
 	log.Println(ip)
 
@@ -75,12 +75,12 @@ func (display *SerialDisplay) ScreenAddr(nome, commVerif int, ip IPOctets, leito
 			"%d lbl %d num"+
 				" %d lbl %d %d %d %d ip"+
 				" %d lbl %d val"+
-				" %d lbl %d val",
+				" %d lbl %d ms",
 
 			flick.PORTAL, nome,
 			flick.IP, ip[0], ip[1], ip[2], ip[3],
 			flick.LEITOR, leitorOk,
-			LABEL_OFFLINE, 6,
+			flick.LTE4G, LTE4GPING,
 		),
 	)
 }
