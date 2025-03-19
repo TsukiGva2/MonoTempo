@@ -17,6 +17,6 @@ sed 's;\(MYTEMPO_DATA=\);\1'"$(realpath .);" System/chancelor > "/usr/local/bin/
 && chmod +x "/usr/local/bin/chancelor"                                                     \
 && systemctl link ./System/systemd/system/chancelor.service                                \
 && echo "Disabling USB autosuspend (see #3)"                                               \
-&& sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="/&usbcore.autosuspend=-1 /' /etc/default/grub     \
+&& sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT="usbcore.autosuspend=-1 loglevel=3 quiet"/' /etc/default/grub \
 && grub-mkconfig -o /boot/grub/grub.cfg                                                    \
 && echo "All done! Please reboot your device for the changes to take place."
