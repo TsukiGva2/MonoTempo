@@ -61,14 +61,15 @@ func (a *Ay) Process() {
 	device.FS = usb.OSFileSystem{}
 
 	var readerIP = os.Getenv("READER_IP")
-	var readerOctets = lcdlogger.IPIfy(readerIP)
+	//	var readerOctets = lcdlogger.IPIfy(readerIP)
 	var readerState atomic.Bool
 
 	var netPing atomic.Int64
+	var netState atomic.Bool
 	//var readerPing atomic.Int64
 
 	go pinger.NewPinger(readerIP, &readerState, nil)
-	go pinger.NewPinger("mytempo.esp.br", nil, &netPing)
+	go pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
 
 	display, displayErr := lcdlogger.NewSerialDisplay()
 
@@ -102,11 +103,17 @@ func (a *Ay) Process() {
 					ok = flick.DESLIGAD
 				}
 
+				wiok := flick.OK
+				if !netState.Load() {
+
+					wiok = flick.DESLIGAD
+				}
+
 				display.ScreenAddr(
 					NUM_EQUIP,
 					commVerif,
-					/* IP         */ readerOctets,
 					/* leitor OK? */ ok,
+					/* internet OK? */ wiok,
 					netPing.Load(),
 				)
 			case lcdlogger.SCREEN_STAT:
