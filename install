@@ -54,6 +54,10 @@ if [ "$UPDATING" = "no" ]; then
     ) || error "Could not switch network configuration method"
 fi
 
+[ "$UPDATING" = "yes" ] \
+    && ./build \
+	|| error "Error while rebuilding the codebase, please file an issue at https://github.com/MyTempoESP/MonoTempo/issues/new?template=BLANK_ISSUE"
+
 read -p "Do you wish to manually setup your configuration files? (N/y): " WISH
 
 [ "$WISH" != "y" ] && healthy_breakup "All done! Please reboot for the changes to take effect."

@@ -1,5 +1,7 @@
 #!/bin/sh
 
-Offline/build.offline
-Online/build.online
+(
+    Offline/build.offline \
+	&& Online/build.online
+) || exit 1
 
