@@ -106,7 +106,7 @@ func (a *Ay) Process() {
 				wiok := flick.OK
 				if !netState.Load() {
 
-					wiok = flick.DESLIGAD
+					wiok = flick.X
 				}
 
 				display.ScreenAddr(
