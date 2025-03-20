@@ -45,7 +45,6 @@ func (a *Ay) Process() {
 	}()
 
 	var device = usb.Device{}
-
 	device.Name = "/dev/sdb"
 	device.FS = usb.OSFileSystem{}
 
@@ -178,6 +177,9 @@ func (a *Ay) Process() {
 				case lcdlogger.ACTION_REBOOT:
 					PCReboot()
 					select {}
+				case lcdlogger.ACTION_USB:
+					CopyToUSB()
+					select {}
 				case lcdlogger.ACTION_RESET:
 					{
 						hasKey := display.WaitKeyPress(5 * time.Second)
@@ -201,20 +203,6 @@ func (a *Ay) Process() {
 
 						tags.Store(0)
 						tagSet.Clear()
-					}
-				case lcdlogger.ACTION_USB:
-					{
-
-						err = CopyToUSB(&device)
-
-						if err == nil {
-
-							tagsUSB.Load()
-
-							<-time.After(5 * time.Second)
-
-							tagsUSB.Store(0)
-						}
 					}
 				default:
 					continue // no action

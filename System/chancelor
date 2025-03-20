@@ -62,6 +62,33 @@ mytempo_upload_normal() {
     mytempo_backup_all_prev_uploads
 }
 
+mytempo_dump_db() {
+    
+    # XXX: this goes through every db file in directory specified in first arg
+    # ...  and then quotes every line and puts a ',' at the end then passes it
+    # ...  to python and it parses this whole thing as a list and assigns it to 'a'
+    # ...  then it zips every athlete number (which dont exceed 3 digits) with
+    # ...  the corresponding time (everything else in the list which has more than 3
+    # ...  digits). Then for every zipped tuple we print 24 - n of digits in athlete
+    # ...  number and print the time of this athlete.
+    python -c "a=[$((for i in $MYTEMPO_DATA/database/$1/N*.db; do sqlite3 -line $i "select athlete_num, athlete_time from athletes_times"; done) | awk 'NF {print "\""$3"\""","}')];print(\"\\n\".join([f\"{\"0\"*(24-len(x))+x}{y}\" for x, y in zip(filter(lambda s: len(s) <= 3, a), filter(lambda s: len(s) > 3, a))]))"
+}
+
+mytempo_dump_all() {
+
+    mytempo_dump_db backup > /tmp/dump_backup
+    mytempo_dump_db envio > /tmp/dump_envio
+    mytempo_dump_db . > /tmp/dump
+}
+
+mytempo_usb_save() {
+
+    mount /dev/sdb1 /mnt \
+	&& mytempo_dump_all \
+	&& mv /tmp/dump* /mnt \
+	&& umount /mnt
+}
+
 mytempo_clean() {
 
     # XXX: this looks sus
@@ -86,6 +113,7 @@ do
 
     $MYTEMPO_DATA/Offline/stop.offline
 
+    [ "$UPLOAD_TYPE" = "save"   ] && mytempo_usb_save
     [ "$UPLOAD_TYPE" = "reset"  ] && mytempo_clean
     [ "$UPLOAD_TYPE" = "reboot" ] && reboot
     [ "$UPLOAD_TYPE" = "normal" ] && mytempo_upload_normal

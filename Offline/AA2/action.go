@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	usb "aa2/usb"
 	"os/exec"
 )
 
@@ -31,35 +30,8 @@ func UploadBackup() {
 	log.Println(err)
 }
 
-func CopyToUSB(device *usb.Device) (err error) {
-
-	if !device.IsMounted {
-
-		err = device.Mount("/mnt")
-
-		if err != nil {
-
-			log.Println("Error mounting")
-
-			return
-		}
-	}
-
-	//now := time.Now().In(c.ProgramTimezone)
-
-	log.Println("copying")
-
-	//err = file.Upload(fmt.Sprintf("/mnt/MYTEMPO-%02d_%02d_%02d", now.Hour(), now.Minute(), now.Second()))
-	/*
-		if err != nil {
-
-			log.Println(err)
-
-			return
-		}
-	*/
-
-	err = device.Umount()
-
-	return
+func CopyToUSB() {
+	cmd := exec.Command("sh", "-c", "echo 'save' > /var/monotempo-data/sig-upload-data")
+	err := cmd.Run()
+	log.Println(err)
 }
