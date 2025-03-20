@@ -71,14 +71,24 @@ mytempo_dump_db() {
     # ...  the corresponding time (everything else in the list which has more than 3
     # ...  digits). Then for every zipped tuple we print 24 - n of digits in athlete
     # ...  number and print the time of this athlete.
-    python -c "a=[$((for i in $MYTEMPO_DATA/database/$1/N*.db; do sqlite3 -line $i "select athlete_num, athlete_time from athletes_times"; done) | awk 'NF {print "\""$3"\""","}')];print(\"\\n\".join([f\"{\"0\"*(24-len(x))+x}{y}\" for x, y in zip(filter(lambda s: len(s) <= 3, a), filter(lambda s: len(s) > 3, a))]))"
+    python -c "a=[$((for i in $1/N*.db; do sqlite3 -line $i "select athlete_num, athlete_time from athletes_times"; done) | awk 'NF {print "\""$3"\""","}')];print(\"\\n\".join([f\"{\"0\"*(24-len(x))+x}{y}\" for x, y in zip(filter(lambda s: len(s) <= 3, a), filter(lambda s: len(s) > 3, a))]))"
 }
 
 mytempo_dump_all() {
 
-    mytempo_dump_db backup > /tmp/dump_backup
-    mytempo_dump_db envio > /tmp/dump_envio
-    mytempo_dump_db . > /tmp/dump
+    echo "This may take a while..."
+    
+    for d in $MYTEMPO_DATA/database/backup/*
+    do
+	mytempo_dump_db "$d" > /tmp/"dump_envio_$d"
+    done
+
+    for d in $MYTEMPO_DATA/database/envio/*
+    do
+	mytempo_dump_db "$d" > /tmp/"dump_envio_$d"
+    done
+    
+    mytempo_dump_db $MYTEMPO_DATABASE/database > /tmp/dump
 }
 
 mytempo_usb_save() {
