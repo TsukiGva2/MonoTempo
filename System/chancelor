@@ -66,9 +66,9 @@ mytempo_clean() {
 
     # XXX: this looks sus
     
-    rm -rf $MYTEMPO_DATA/N*.db
-    rm -rf $MYTEMPO_DATA/backup/*
-    rm -rf $MYTEMPO_DATA/envio/*
+    rm -rf $MYTEMPO_DATA/database/N*.db
+    rm -rf $MYTEMPO_DATA/database/backup/*
+    rm -rf $MYTEMPO_DATA/database/envio/*
 }
 
 echo "Chancelor, Version 1.1.0"
