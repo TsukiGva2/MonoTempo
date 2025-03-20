@@ -80,15 +80,15 @@ mytempo_dump_all() {
     
     for d in $MYTEMPO_DATA/database/backup/*
     do
-	mytempo_dump_db "$d" > /tmp/"dump_envio_$d"
+	mytempo_dump_db "$d" > /tmp/"dump$(basename "$d")"
     done
 
     for d in $MYTEMPO_DATA/database/envio/*
     do
-	mytempo_dump_db "$d" > /tmp/"dump_envio_$d"
+	mytempo_dump_db "$d" > /tmp/"dump$(basename "$d")"
     done
     
-    mytempo_dump_db $MYTEMPO_DATABASE/database > /tmp/dump
+    mytempo_dump_db $MYTEMPO_DATA/database > /tmp/dump
 }
 
 mytempo_usb_save() {
