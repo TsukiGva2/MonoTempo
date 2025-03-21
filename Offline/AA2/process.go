@@ -31,11 +31,10 @@ func (a *Ay) Process() {
 
 			tags_start_at, err := strconv.Atoi(tags_start_at)
 
-			if err != nil {
-				return
-			}
+			if err == nil {
 
-			tags.Store(int64(tags_start_at))
+				tags.Store(int64(tags_start_at))
+			}
 		}
 
 		for t := range a.Tags {
