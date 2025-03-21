@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -13,6 +14,28 @@ import (
 	"aa2/usb"
 )
 
+func PopulateTagSet(tagSet *intSet.IntSet) {
+
+	b, err := os.ReadFile("/var/monotempo-data/TAGS")
+
+	if err != nil {
+
+		return
+	}
+
+	for _, s := range strings.Split(string(b), "\n") {
+
+		n, err := strconv.Atoi(s)
+
+		if err != nil {
+
+			continue
+		}
+
+		tagSet.Insert(n)
+	}
+}
+
 func (a *Ay) Process() {
 
 	var (
@@ -22,6 +45,8 @@ func (a *Ay) Process() {
 	)
 
 	tagSet := intSet.New()
+
+	PopulateTagSet(&tagSet)
 
 	tags_start_at := os.Getenv("TAG_COUNT_START_AT")
 

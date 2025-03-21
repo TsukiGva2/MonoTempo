@@ -121,6 +121,17 @@ mytempo_count_tags() {
     done 1> /dev/null 2> /dev/null && echo $count
 }
 
+mytempo_populate_tags() {
+
+    for d in $MYTEMPO_DATA/database/envio/*
+    do
+	for i in $d/N*.db
+	do
+	    sqlite3 -line $i "select distinct athlete_num from athletes_times"
+	done
+    done 2> /dev/null | awk 'NF {print $3}' > $MYTEMPO_DATA/database/TAGS
+}
+
 echo "Chancelor, Version 1.1.0"
 
 echo "Backing up leftover data (if any)"
@@ -132,6 +143,7 @@ while true;
 do
     # set initial value of tag count
     export TAG_COUNT_START_AT=$(mytempo_count_tags)
+    mytempo_populate_tags
     
     $MYTEMPO_DATA/Offline/setup.offline
 
