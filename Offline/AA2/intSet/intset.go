@@ -5,15 +5,18 @@ import (
 	"sync/atomic"
 )
 
+// Implements a thread-safe set of integers
 type IntSet struct {
 	data      map[int]struct{}
 	dataMutex sync.RWMutex
 
-	/* Item count */
+	// Item count
 	count int64
 }
 
+// Initialize a new IntSet
 func New() (s IntSet) {
+
 	s.dataMutex.Lock()
 	s.data = make(map[int]struct{})
 	s.dataMutex.Unlock()
@@ -21,6 +24,7 @@ func New() (s IntSet) {
 	return
 }
 
+// Checks if integer 'n' exists in the set
 func (s *IntSet) Exists(n int) (ok bool) {
 
 	s.dataMutex.RLock()
@@ -30,7 +34,9 @@ func (s *IntSet) Exists(n int) (ok bool) {
 	return
 }
 
+// Inserts 'n' in the set if it's not already
 func (s *IntSet) Insert(n int) bool {
+
 	if s.Exists(n) {
 
 		return false
@@ -45,6 +51,7 @@ func (s *IntSet) Insert(n int) bool {
 	return true
 }
 
+// Clears the set by literally freeing the data and reallocating
 func (s *IntSet) Clear() {
 
 	s.dataMutex.Lock()
@@ -55,6 +62,8 @@ func (s *IntSet) Clear() {
 	atomic.StoreInt64(&s.count, 0)
 }
 
+// Returns the number of elements in the set
 func (s *IntSet) Count() int64 {
+
 	return atomic.LoadInt64(&s.count)
 }
