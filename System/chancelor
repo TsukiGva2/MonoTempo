@@ -91,7 +91,8 @@ mytempo_usb_save() {
     mount /dev/sdb1 /mnt \
 	&& (
 	mytempo_dump_all \
-	    &&  cat /tmp/dump* > /mnt/MYTEMPO_$(date +"%H_%M_%S").txt \
+	    &&  cat /tmp/dump* \
+		| awk 'NF {print $0}' > /mnt/MYTEMPO_$(date +"%H_%M_%S").txt \
 	    ;   umount /mnt
     )
 }
