@@ -117,14 +117,13 @@ func (display *SerialDisplay) ScreenStat(nome, commVerif int, a1, a2, a3, a4 For
 				" %d %d"+ // A3 Val+Mag
 				" %d %d"+ // A2 Val+Mag
 				" %d %d atn"+ // A1 Val+Mag then display
-				" %d lbl %d val",
+				" fwd",
 
 			flick.PORTAL, nome,
 			a4.Value, a4.Magnitude,
 			a3.Value, a3.Magnitude,
 			a2.Value, a2.Magnitude,
 			a1.Value, a1.Magnitude,
-			LABEL_OFFLINE, 6,
 		),
 	)
 }
@@ -151,12 +150,11 @@ func (display *SerialDisplay) ScreenTime(nome, commVerif int) {
 				// skip line
 				" 22 lbl %d %d %d $DA7E ip"+
 
-				" %d lbl %d val",
+				" fwd",
 
 			flick.PORTAL, nome,
 			now.Hour(), now.Minute(), now.Second(),
 			d, m, y,
-			LABEL_OFFLINE, 6,
 		),
 	)
 }
