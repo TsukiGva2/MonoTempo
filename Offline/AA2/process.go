@@ -42,9 +42,10 @@ func (a *Ay) Process() {
 		tags     atomic.Int64
 		tagsUSB  atomic.Int64
 		antennas [4]atomic.Int64
+		tagSet   intSet.IntSet
 	)
 
-	tagSet := intSet.New()
+	tagSet = intSet.New()
 
 	PopulateTagSet(&tagSet)
 
@@ -86,7 +87,7 @@ func (a *Ay) Process() {
 	device.FS = usb.OSFileSystem{}
 
 	var readerIP = os.Getenv("READER_IP")
-	//	var readerOctets = lcdlogger.IPIfy(readerIP)
+	// var readerOctets = lcdlogger.IPIfy(readerIP)
 	var readerState atomic.Bool
 
 	var netPing atomic.Int64

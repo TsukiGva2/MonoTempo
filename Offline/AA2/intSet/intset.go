@@ -25,13 +25,13 @@ func New() (s IntSet) {
 }
 
 // Checks if integer 'n' exists in the set
-func (s *IntSet) Exists(n int) (ok bool) {
+func (s *IntSet) Exists(n int) bool {
 
 	s.dataMutex.RLock()
-	_, ok = s.data[n]
+	_, ok := s.data[n]
 	s.dataMutex.RUnlock()
 
-	return
+	return ok
 }
 
 // Inserts 'n' in the set if it's not already
