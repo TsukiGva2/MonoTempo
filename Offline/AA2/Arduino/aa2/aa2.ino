@@ -5,7 +5,7 @@
 #include "nanoFORTH.h"
 #include <string.h>
 
-#define LABEL_COUNT 28
+#define LABEL_COUNT 33
 
 const char* labels[] = {
   "PORTAL   My",
@@ -41,10 +41,16 @@ const char* labels[] = {
 
   "DOS BACKUPS", // 26
 
-  "UPLOAD EM ANDAMENTO" // 27
+  "UPLOAD EM ANDAMENTO", // 27
+
+  "<START: RESET TELA>",
+  "<START: RESET WIFI>",
+  "<START: RESET 4G>",
+  "<START: BACKUP USB>",
+  "<START: APAGA TUDO>" // 32
 };
 const int labels_len[LABEL_COUNT] = {
-  11,9,9,12,7,8,6,4,7,7,6,6,5,10,12,11,9,9,9,9,14,7,6,18,17,10,11,19
+  11,9,9,12,7,8,6,4,7,7,6,6,5,10,12,11,9,9,9,9,14,7,6,18,17,10,11,19,19,19,17,19,19
 };
 
 #define VALUE_COUNT 9

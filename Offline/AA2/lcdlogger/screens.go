@@ -37,6 +37,14 @@ const ( /* Labels Extras */
 	LABEL_OFFLINE
 )
 
+const ( /* Labels ação */
+	LABEL_ACTION_TELA = 28 + iota
+	LABEL_ACTION_WIFI
+	LABEL_ACTION_4G
+	LABEL_ACTION_USB
+	LABEL_ACTION_APAGA
+)
+
 type IPOctets [4]int
 
 func (display *SerialDisplay) DrawScreen(code string) {
@@ -60,12 +68,30 @@ func (display *SerialDisplay) ScreenTags(nome, commVerif int, tags, tagsUnicas F
 			flick.PORTAL, nome,
 			flick.REGIST, tags.Value, tags.Magnitude,
 			flick.UNICAS, tagsUnicas.Value, tagsUnicas.Magnitude,
-			LABEL_OFFLINE, 6,
+			LABEL_ACTION_TELA, 6,
 		),
 	)
 }
 
-func (display *SerialDisplay) ScreenAddr(nome, commVerif int, leitorOk, lteOk int, LTE4GPING int64) {
+func (display *SerialDisplay) ScreenWifi(nome, commVerif int, leitorOk, wifiOk int, wifiPing int64) {
+
+	display.DrawScreen(
+		fmt.Sprintf(
+			"%d lbl %d num"+
+				" %d lbl %d val"+
+				" %d lbl %d ms"+
+				" %d lbl %d val",
+
+			flick.PORTAL, nome,
+			flick.WIFI, wifiOk,
+			flick.PING, wifiPing,
+			LABEL_ACTION_WIFI, 6,
+		),
+	)
+}
+
+// UNUSED
+func (display *SerialDisplay) Screen4g(nome, commVerif int, leitorOk, lteOk int, LTE4GPING int64) {
 
 	display.DrawScreen(
 		fmt.Sprintf(
@@ -146,7 +172,7 @@ func (display *SerialDisplay) ScreenUSB(nome, commVerif int, devVerif int) {
 
 			flick.PORTAL, nome,
 			devVerif,
-			LABEL_OFFLINE, 6,
+			LABEL_ACTION_USB, 6,
 		),
 	)
 }
@@ -157,14 +183,14 @@ func (display *SerialDisplay) ScreenInfoEquip(nome int) {
 		fmt.Sprintf(
 			"%d lbl %d num"+
 				// ( ( CA: chafon, FF: impinj ) << 2 ) | ( reader name >> 1 )
-				" %d lbl $%s 16 fnm"+
 				" %d lbl %d num"+
-				" %d lbl $%s hex",
+				" %d lbl $%s hex"+
+				" %d lbl %d val",
 
 			flick.PORTAL, nome,
-			LABEL_RFID, c.Reader,
 			LABEL_SERIE, c.Serie,
 			LABEL_SIST, c.Version,
+			LABEL_ACTION_APAGA, 6,
 		),
 	)
 }

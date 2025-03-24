@@ -139,7 +139,7 @@ func (a *Ay) Process() {
 					wiok = flick.X
 				}
 
-				display.ScreenAddr(
+				display.ScreenWifi(
 					NUM_EQUIP,
 					commVerif,
 					/* leitor OK? */ ok,
