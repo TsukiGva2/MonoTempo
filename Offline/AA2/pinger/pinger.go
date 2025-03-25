@@ -8,7 +8,7 @@ import (
 	probing "github.com/prometheus-community/pro-bing"
 )
 
-func NewPinger(ip string, state *atomic.Bool, ping *atomic.Int64) {
+func NewPinger(ip string, state *atomic.Bool, ping *atomic.Int64) (p *probing.Pinger) {
 
 	p, err := probing.NewPinger(ip)
 
@@ -42,4 +42,6 @@ func NewPinger(ip string, state *atomic.Bool, ping *atomic.Int64) {
 	}
 
 	p.Run()
+
+	return
 }

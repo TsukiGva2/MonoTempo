@@ -96,7 +96,8 @@ func (a *Ay) Process() {
 	//var readerPing atomic.Int64
 
 	go pinger.NewPinger(readerIP, &readerState, nil)
-	go pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
+
+	WifiPinger := pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
 
 	display, displayErr := lcdlogger.NewSerialDisplay()
 
@@ -243,7 +244,12 @@ func (a *Ay) Process() {
 					CopyToUSB()
 					select {}
 				case lcdlogger.ACTION_WIFI_RESET:
-					ResetWifi()
+					{
+						ResetWifi()
+
+						WifiPinger.Stop()
+						WifiPinger = pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
+					}
 				case lcdlogger.ACTION_RESET:
 					{
 						hasKey := display.WaitKeyPress(5 * time.Second)
