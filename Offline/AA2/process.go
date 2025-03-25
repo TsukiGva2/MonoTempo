@@ -66,6 +66,7 @@ func (a *Ay) Process() {
 		for t := range a.Tags {
 
 			if t.Antena == 0 {
+
 				/*
 					Antena 0 não exist
 				*/
@@ -146,6 +147,28 @@ func (a *Ay) Process() {
 					/* internet OK? */ wiok,
 					netPing.Load(),
 				)
+			case lcdlogger.SCREEN_4G:
+
+				ok := flick.OK
+
+				if !readerState.Load() {
+
+					ok = flick.DESLIGAD
+				}
+
+				wiok := flick.OK
+				if !netState.Load() {
+
+					wiok = flick.X
+				}
+
+				display.Screen4g(
+					NUM_EQUIP,
+					commVerif,
+					/* leitor OK? */ ok,
+					/* internet OK? */ wiok,
+					netPing.Load(),
+				)
 			case lcdlogger.SCREEN_STAT:
 				display.ScreenStat(
 					NUM_EQUIP,
@@ -212,12 +235,15 @@ func (a *Ay) Process() {
 				case lcdlogger.ACTION_UPLOAD_BACKUP:
 					UploadBackup()
 					select {}
-				case lcdlogger.ACTION_REBOOT:
-					PCReboot()
-					select {}
+					/*				case lcdlogger.ACTION_REBOOT:
+									PCReboot()
+									select {}
+					*/
 				case lcdlogger.ACTION_USB:
 					CopyToUSB()
 					select {}
+				case lcdlogger.ACTION_WIFI_RESET:
+					ResetWifi()
 				case lcdlogger.ACTION_RESET:
 					{
 						hasKey := display.WaitKeyPress(5 * time.Second)

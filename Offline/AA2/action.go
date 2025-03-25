@@ -6,6 +6,11 @@ import (
 	"os/exec"
 )
 
+func ResetWifi() {
+	cmd := exec.Command("sh", "-c", "nmcli conn down MyTempo; nmcli conn up MyTempo")
+	go cmd.Run()
+}
+
 func ResetarTudo() {
 	cmd := exec.Command("sh", "-c", "echo 'reset' > /var/monotempo-data/sig-upload-data")
 	err := cmd.Run()

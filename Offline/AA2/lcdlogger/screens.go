@@ -12,6 +12,7 @@ import (
 const (
 	SCREEN_TAGS = iota
 	SCREEN_ADDR
+	SCREEN_4G
 	SCREEN_STAT
 	SCREEN_TIME
 	SCREEN_USB
@@ -90,20 +91,19 @@ func (display *SerialDisplay) ScreenWifi(nome, commVerif int, leitorOk, wifiOk i
 	)
 }
 
-// UNUSED
 func (display *SerialDisplay) Screen4g(nome, commVerif int, leitorOk, lteOk int, LTE4GPING int64) {
 
 	display.DrawScreen(
 		fmt.Sprintf(
 			"%d lbl %d num"+
 				" %d lbl %d val"+
-				" %d lbl %d val"+
-				" %d lbl %d ms",
+				" %d lbl %d ms"+
+				" %d lbl %d val",
 
 			flick.PORTAL, nome,
-			flick.LEITOR, leitorOk,
 			flick.LTE4G, lteOk,
 			flick.PING, LTE4GPING,
+			LABEL_ACTION_4G, 6,
 		),
 	)
 }
