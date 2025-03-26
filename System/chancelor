@@ -30,7 +30,7 @@ mytempo_move_envio_to_backup() {
 
 mytempo_upload_dir() {
 
-    backup_dir="$MYTEMPO_DATA/database/$1"
+    backup_dir="$MYTEMPO_DATA"/database/$1
 
     for d in "$backup_dir"/*; do
 
@@ -58,6 +58,8 @@ mytempo_upload_normal() {
 }
 
 mytempo_dump_db() {
+
+    SQL_QUERY="${2:-select athlete_num, athlete_time from athletes_times}"
     
     # XXX: this goes through every db file in directory specified in first arg
     # ...  and then quotes every line and puts a ',' at the end then passes it
@@ -66,7 +68,7 @@ mytempo_dump_db() {
     # ...  the corresponding time (everything else in the list which has more than 3
     # ...  digits). Then for every zipped tuple we print 24 - n of digits in athlete
     # ...  number and print the time of this athlete.
-    python -c "a=[$( (for i in "$1"/N*.db; do sqlite3 -line "$i" "select athlete_num, athlete_time from athletes_times"; done) | awk 'NF {print "\""$3"\""","}')];print(\"\\n\".join([f\"{\"0\"*(24-len(x))+x}{y}\" for x, y in zip(filter(lambda s: len(s) <= 3, a), filter(lambda s: len(s) > 3, a))]))"
+    python -c "a=[$( (for i in "$1"/N*.db; do sqlite3 -line "$i" "$SQL_QUERY"; done) | awk 'NF {print "\""$3"\""","}')];print(\"\\n\".join([f\"{\"0\"*(24-len(x))+x}{y}\" for x, y in zip(filter(lambda s: len(s) <= 3, a), filter(lambda s: len(s) > 3, a))]))"
 }
 
 mytempo_dump_all() {
@@ -75,12 +77,12 @@ mytempo_dump_all() {
     
     for d in "$MYTEMPO_DATA"/database/backup/*
     do
-	mytempo_dump_db "$d" > /tmp/"dump$(basename "$d")"
+	mytempo_dump_db "$d" "$1" > /tmp/"dump$(basename "$d")"
     done
 
     for d in "$MYTEMPO_DATA"/database/envio/*
     do
-	mytempo_dump_db "$d" > /tmp/"dump$(basename "$d")"
+	mytempo_dump_db "$d" "$1" > /tmp/"dump$(basename "$d")"
     done
 }
 
@@ -103,7 +105,7 @@ mytempo_usb_save_stats() {
     
     mount /dev/sdb1 /mnt \
 	&& (
-	mytempo_dump_all \
+	mytempo_dump_all "select athlete_num, MIN(athlete_time) from athletes_times group by athlete_num" \
 	    &&  cat /tmp/dump* \
 		| awk 'NF {print $0}' > /mnt/MYTEMPO_"$(date +"%H_%M_%S")".txt \
 	    ;   umount /mnt
@@ -171,12 +173,14 @@ do
     
     "$MYTEMPO_DATA"/Offline/stop.offline
 
-    [ "$UPLOAD_TYPE" = "stats"  ] && mytempo_usb_save_stats
-    [ "$UPLOAD_TYPE" = "save"   ] && mytempo_usb_save
-    [ "$UPLOAD_TYPE" = "reset"  ] && mytempo_clean
-    [ "$UPLOAD_TYPE" = "reboot" ] && reboot
-    [ "$UPLOAD_TYPE" = "normal" ] && mytempo_upload_normal
-    [ "$UPLOAD_TYPE" = "backup" ] && mytempo_upload_backup
+    case "$UPLOAD_TYPE" in
+	 "stats") mytempo_usb_save_stats ;;
+	"backup") mytempo_upload_backup ;;
+	"normal") mytempo_upload_normal ;;
+	  "save") mytempo_usb_save ;;
+	 "reset") mytempo_clean ;;
+	"reboot") reboot ;;
+    esac
 
     mytempo_backup_to envio
     

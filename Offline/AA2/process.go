@@ -249,6 +249,9 @@ func (a *Ay) Process() {
 				case lcdlogger.ACTION_USB:
 					CopyToUSB()
 					select {}
+				case lcdlogger.ACTION_RELATORIO:
+					CreateUSBRelatorio()
+					select {}
 				case lcdlogger.ACTION_WIFI_RESET:
 					{
 						ResetWifi()

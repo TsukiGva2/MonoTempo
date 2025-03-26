@@ -6,6 +6,12 @@ import (
 	"os/exec"
 )
 
+func CreateUSBRelatorio() {
+	cmd := exec.Command("sh", "-c", "echo 'stats' > /var/monotempo-data/sig-upload-data")
+	err := cmd.Run()
+	log.Println(err)
+}
+
 func ResetWifi() {
 	cmd := exec.Command("sh", "-c", "echo 'wifi' > /var/monotempo-data/sig-device-operation")
 	err := cmd.Run()
