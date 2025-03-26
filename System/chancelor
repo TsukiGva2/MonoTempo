@@ -171,10 +171,6 @@ do
     
     "$MYTEMPO_DATA"/Offline/stop.offline
 
-    # save databases independent of command just so we dont risk
-    # losing data
-    mytempo_backup_to envio
-
     [ "$UPLOAD_TYPE" = "stats"  ] && mytempo_usb_save_stats
     [ "$UPLOAD_TYPE" = "save"   ] && mytempo_usb_save
     [ "$UPLOAD_TYPE" = "reset"  ] && mytempo_clean
@@ -182,6 +178,8 @@ do
     [ "$UPLOAD_TYPE" = "normal" ] && mytempo_upload_normal
     [ "$UPLOAD_TYPE" = "backup" ] && mytempo_upload_backup
 
+    mytempo_backup_to envio
+    
     sleep 5
 done
 
