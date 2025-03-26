@@ -6,7 +6,7 @@ set -o xtrace
 MYTEMPO_DATA=
 DATABASE_DIR="$MYTEMPO_DATA"/database
 BACKUP_DIR="$DATABASE_DIR"/backup
-ENVIO_DIR="$DATABASE_DIR"/database/envio
+ENVIO_DIR="$DATABASE_DIR"/envio
 
 not_empty() {
     
