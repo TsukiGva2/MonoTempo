@@ -7,6 +7,7 @@ log objects to functions so they don't really bother us
 
 import (
 	"log"
+	"os/exec"
 
 	rabbit "github.com/mytempoesp/rabbit"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -46,6 +47,13 @@ func (a *Ay) StartConsumers() (channel *amqp.Channel, err error) {
 	return
 }
 
+func filhoDaPutaVaiSeFuderArrombado(e) {
+	cmd := exec.Command("sh", "-c", "echo 'fatal' > /var/monotempo-data/sig-upload-data")
+	err := cmd.Run()
+	log.Println(err, e)
+	select {}
+}
+
 func main() {
 	for {
 		var a Ay
@@ -53,19 +61,19 @@ func main() {
 		err := a.broker.Setup()
 
 		if err != nil {
-			log.Fatal(err)
+			filhoDaPutaVaiSeFuderArrombado(err)
 		}
 
 		err = a.CreateBindings()
 
 		if err != nil {
-			log.Fatal(err)
+			filhoDaPutaVaiSeFuderArrombado(err)
 		}
 
 		channel, err := a.StartConsumers()
 
 		if err != nil {
-			log.Fatal(err)
+			filhoDaPutaVaiSeFuderArrombado(err)
 		}
 
 		go a.Process()

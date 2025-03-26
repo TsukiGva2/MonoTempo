@@ -199,6 +199,7 @@ do
     mytempo_backup_to envio
     
     case "$UPLOAD_TYPE" in
+	 "fatal") ;;
 	 "stats") mytempo_usb_save_stats ;;
 	"backup") mytempo_upload_backup ;;
 	"normal") mytempo_upload_normal ;;
