@@ -117,7 +117,6 @@ if [ "$READER_TYPE" = "chafon" ]; then
 fi
 
 if [ "$READER_TYPE" = "impinj" ]; then
-
     prompt_user "Type the reader IP address: " READER_IP
     sed -i "s/READER_IP=.*$/READER_IP=$READER_IP/" shared.env || error "Error setting reader IP address"
 fi

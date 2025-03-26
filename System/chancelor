@@ -15,7 +15,7 @@ mytempo_update() {
 
 mytempo_save() {
 
-    mkdir -p "$1" && mv "$MYTEMPO_DATA/database/N*.db" "$1"
+    mkdir -p "$1" && mv "$MYTEMPO_DATA"/database/N*.db "$1"
 }
 
 mytempo_backup_to() {
@@ -25,7 +25,7 @@ mytempo_backup_to() {
 
 mytempo_move_envio_to_backup() {
 
-    mv "$MYTEMPO_DATA/database/envio/*" "$MYTEMPO_DATA/database/backup"
+    mv "$MYTEMPO_DATA"/database/envio/* "$MYTEMPO_DATA/database/backup"
 }
 
 mytempo_upload_dir() {
@@ -85,6 +85,19 @@ mytempo_dump_all() {
 }
 
 mytempo_usb_save() {
+
+    rm -f /tmp/dump*
+    
+    mount /dev/sdb1 /mnt \
+	&& (
+	mytempo_dump_all \
+	    &&  cat /tmp/dump* \
+		| awk 'NF {print $0}' > /mnt/MYTEMPO_"$(date +"%H_%M_%S")".txt \
+	    ;   umount /mnt
+    )
+}
+
+mytempo_usb_save_stats() {
 
     rm -f /tmp/dump*
     
@@ -162,6 +175,7 @@ do
     # losing data
     mytempo_backup_to envio
 
+    [ "$UPLOAD_TYPE" = "stats"  ] && mytempo_usb_save_stats
     [ "$UPLOAD_TYPE" = "save"   ] && mytempo_usb_save
     [ "$UPLOAD_TYPE" = "reset"  ] && mytempo_clean
     [ "$UPLOAD_TYPE" = "reboot" ] && reboot
