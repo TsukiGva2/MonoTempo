@@ -1,15 +1,18 @@
 #!/bin/sh
 
 error() {
-    printf "\033[31;1m$@\033[0m\n"
-
+    printf "\033[31;1m%s\033[0m\n" "$@"
     exit 1
 }
 
 healthy_breakup() {
-    printf "\033[32;1m$@\033[0m\n"
-
+    printf "\033[32;1m%s\033[0m\n" "$@"
     exit 0
+}
+
+prompt_user() {
+    printf "%s" "$1" >&2
+    read -r "$2"
 }
 
 # switch to update as default
@@ -28,7 +31,7 @@ REMAKE_ENVIRONMENT=no
 	|| ! test -e Offline/AA2/aa2.env \
 	|| git log --format=%B -n 1 | head -n 1 | grep "(environment)" > /dev/null \
 	|| (
-	    read -p "Do you wish to manually reconfigure your configuration files? (N/y): " WISH ;
+	    prompt_user "Do you wish to manually reconfigure your configuration files? (N/y): " WISH ;
 	    [ "$WISH" = "y" ]
 	)
 ) \
@@ -50,9 +53,9 @@ install_script() {
 
     (
 	mkdir -p "/usr/local/bin/"
-	sed 's;\(MYTEMPO_DATA=\);\1'"$(realpath .);" System/$1 > "/usr/local/bin/$1" \
+	sed 's;\(MYTEMPO_DATA=\);\1'"$(realpath .);" System/"$1" > "/usr/local/bin/$1" \
 	    && chmod +x "/usr/local/bin/$1" \
-	    && systemctl link ./System/systemd/system/$1.service
+	    && systemctl link ./System/systemd/system/"$1".service
     ) || error "Could not install $1, check your perms"
 }
 
@@ -80,9 +83,9 @@ fi
 # if does not remake env, die
 [ "$REMAKE_ENVIRONMENT" = "no" ] && healthy_breakup "All done! Please reboot for the changes to take effect."
 
-read -p "Please type the device ID (default: 501): " DEVICE_ID
-read -p "Type the device's reader type (impinj/chafon): " READER_TYPE
-read -p "Is your Arduino screen programmer detected as ACM or USB? (leave blank if you dont know): " SCREEN_PATH
+prompt_user "Please type the device ID (default: 501): " DEVICE_ID
+prompt_user "Type the device's reader type (impinj/chafon): " READER_TYPE
+prompt_user "Is your Arduino screen programmer detected as ACM or USB? (leave blank if you dont know): " SCREEN_PATH
 
 echo "Setting up hostname"
 (echo "my$DEVICE_ID" > /etc/hostname) || error "Could not set machine hostname"
@@ -109,12 +112,13 @@ READER_NAME=
 
 echo "Setting reader ip"
 
-[ "$READER_TYPE" = "chafon" ] \
-    && sed -i "s/READER_IP=.*$/READER_IP=192.168.1.200/" shared.env || error "Error setting reader IP address"
+if [ "$READER_TYPE" = "chafon" ]; then
+    sed -i "s/READER_IP=.*$/READER_IP=192.168.1.200/" shared.env || error "Error setting reader IP address"
+fi
 
 if [ "$READER_TYPE" = "impinj" ]; then
 
-    read -p "Type the reader IP address: " READER_IP
+    prompt_user "Type the reader IP address: " READER_IP
     sed -i "s/READER_IP=.*$/READER_IP=$READER_IP/" shared.env || error "Error setting reader IP address"
 fi
 

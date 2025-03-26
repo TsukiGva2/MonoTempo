@@ -5,17 +5,17 @@ MYTEMPO_DATA=
 
 mytempo_upload() {
 
-    $MYTEMPO_DATA/Online/setup.online ${1:-$MYTEMPO_DATA/database} upload
+    "$MYTEMPO_DATA/Online/setup.online" "${1:-$MYTEMPO_DATA/database}" upload
 }
 
 mytempo_update() {
 
-    $MYTEMPO_DATA/Online/setup.online ${1:-$MYTEMPO_DATA/database} update
+    "$MYTEMPO_DATA/Online/setup.online" "$MYTEMPO_DATA/database" update
 }
 
 mytempo_save() {
 
-    mkdir -p $1 && mv $MYTEMPO_DATA/database/N*.db $1
+    mkdir -p "$1" && mv "$MYTEMPO_DATA/database/N*.db" "$1"
 }
 
 mytempo_backup_to() {
@@ -25,19 +25,19 @@ mytempo_backup_to() {
 
 mytempo_move_envio_to_backup() {
 
-    mv $MYTEMPO_DATA/database/envio/* $MYTEMPO_DATA/database/backup
+    mv "$MYTEMPO_DATA/database/envio/*" "$MYTEMPO_DATA/database/backup"
 }
 
 mytempo_upload_dir() {
 
-    backup_dir=$MYTEMPO_DATA/database/$1
+    backup_dir="$MYTEMPO_DATA/database/$1"
 
-    for d in $backup_dir/*; do
+    for d in "$backup_dir"/*; do
 
-	cp $MYTEMPO_DATA/database/equipamento.db $d
+	cp "$MYTEMPO_DATA/database/equipamento.db" "$d"
 
 	# actual volume directory
-	mytempo_upload $(realpath $d)
+	mytempo_upload "$(realpath "$d")"
     done
 }
 
@@ -66,19 +66,19 @@ mytempo_dump_db() {
     # ...  the corresponding time (everything else in the list which has more than 3
     # ...  digits). Then for every zipped tuple we print 24 - n of digits in athlete
     # ...  number and print the time of this athlete.
-    python -c "a=[$((for i in $1/N*.db; do sqlite3 -line $i "select athlete_num, athlete_time from athletes_times"; done) | awk 'NF {print "\""$3"\""","}')];print(\"\\n\".join([f\"{\"0\"*(24-len(x))+x}{y}\" for x, y in zip(filter(lambda s: len(s) <= 3, a), filter(lambda s: len(s) > 3, a))]))"
+    python -c "a=[$( (for i in "$1"/N*.db; do sqlite3 -line "$i" "select athlete_num, athlete_time from athletes_times"; done) | awk 'NF {print "\""$3"\""","}')];print(\"\\n\".join([f\"{\"0\"*(24-len(x))+x}{y}\" for x, y in zip(filter(lambda s: len(s) <= 3, a), filter(lambda s: len(s) > 3, a))]))"
 }
 
 mytempo_dump_all() {
 
     echo "This may take a while..."
     
-    for d in $MYTEMPO_DATA/database/backup/*
+    for d in "$MYTEMPO_DATA"/database/backup/*
     do
 	mytempo_dump_db "$d" > /tmp/"dump$(basename "$d")"
     done
 
-    for d in $MYTEMPO_DATA/database/envio/*
+    for d in "$MYTEMPO_DATA"/database/envio/*
     do
 	mytempo_dump_db "$d" > /tmp/"dump$(basename "$d")"
     done
@@ -92,7 +92,7 @@ mytempo_usb_save() {
 	&& (
 	mytempo_dump_all \
 	    &&  cat /tmp/dump* \
-		| awk 'NF {print $0}' > /mnt/MYTEMPO_$(date +"%H_%M_%S").txt \
+		| awk 'NF {print $0}' > /mnt/MYTEMPO_"$(date +"%H_%M_%S")".txt \
 	    ;   umount /mnt
     )
 }
@@ -101,61 +101,62 @@ mytempo_clean() {
 
     # XXX: this looks sus
     
-    rm -rf $MYTEMPO_DATA/database/backup/*
-    rm -rf $MYTEMPO_DATA/database/envio/*
+    rm -rf "$MYTEMPO_DATA"/database/backup/*
+    rm -rf "$MYTEMPO_DATA"/database/envio/*
 }
 
 mytempo_count_tags_dir() {
 
     # trivia: what is my tech stack? PAWS, Python AWk and Shell script
     
-    python -c "print(sum([$((for i in $1/N*.db; do sqlite3 -line $i "select COUNT(1) from athletes_times"; done) | awk 'NF {print $3","}')]))"
+    python -c "print(sum([$( (for i in "$1"/N*.db; do sqlite3 -line "$i" "select COUNT(1) from athletes_times"; done) | awk 'NF {print $3","}')]))"
 }
 
 mytempo_count_tags() {
 
-    local count=0
+    count=0
 
     # pipe all output of this to /dev/null, since we just want
     # the side effect.
 
-    for d in $MYTEMPO_DATA/database/envio/*
+    for d in "$MYTEMPO_DATA"/database/envio/*
     do
 	# math in shell!!!
-	count=$(($(mytempo_count_tags_dir "$d") + $count))
+	count=$(( $(mytempo_count_tags_dir "$d") + "$count" ))
     done 1> /dev/null 2> /dev/null && echo $count
 }
 
 mytempo_populate_tags() {
 
-    for d in $MYTEMPO_DATA/database/envio/*
+    for d in "$MYTEMPO_DATA"/database/envio/*
     do
-	for i in $d/N*.db
+	for i in "$d"/N*.db
 	do
-	    sqlite3 -line $i "select distinct athlete_num from athletes_times"
+	    sqlite3 -line "$i" "select distinct athlete_num from athletes_times"
 	done
-    done 2> /dev/null | awk 'NF {print $3}' > $MYTEMPO_DATA/database/TAGS
+    done 2> /dev/null | awk 'NF {print $3}' > "$MYTEMPO_DATA"/database/TAGS
 }
 
 echo "Chancelor, Version 1.1.0"
 
 echo "Backing up leftover data (if any)"
-test -e $MYTEMPO_DATA/database/N0.db \
+test -e "$MYTEMPO_DATA"/database/N0.db \
     && mytempo_backup_to backup \
     && mytempo_move_envio_to_backup
 
 while true;
 do
     # set initial value of tag count
-    export TAG_COUNT_START_AT=$(mytempo_count_tags)
+    TAG_COUNT_START_AT=$(mytempo_count_tags)
+    export TAG_COUNT_START_AT
     mytempo_populate_tags
     
-    $MYTEMPO_DATA/Offline/setup.offline
+    "$MYTEMPO_DATA"/Offline/setup.offline
 
     # wait for a signal
-    read UPLOAD_TYPE < $MYTEMPO_DATA/database/sig-upload-data
+    read -r UPLOAD_TYPE < "$MYTEMPO_DATA"/database/sig-upload-data
     
-    $MYTEMPO_DATA/Offline/stop.offline
+    "$MYTEMPO_DATA"/Offline/stop.offline
 
     # save databases independent of command just so we dont risk
     # losing data
