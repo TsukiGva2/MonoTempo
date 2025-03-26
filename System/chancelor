@@ -48,8 +48,9 @@ mytempo_move_envio_to_backup() {
 
 mytempo_upload_dir() {
 
-    not_empty "$BACKUP_DIR" \
-	&& for d in "$BACKUP_DIR"/*; do
+    directory="$DATABASE_DIR/$1"
+    not_empty "$directory" \
+	&& for d in "$directory"/*; do
 
 	cp "$DATABASE_DIR"/equipamento.db "$d"
 
@@ -179,11 +180,13 @@ test -e "$DATABASE_DIR"/N0.db \
 
 while true;
 do
+    rm "$DATABASE_DIR"/*-journal
     rm "$DATABASE_DIR"/equipamento.db
     
     # set initial value of tag count
     TAG_COUNT_START_AT=$(mytempo_count_tags)
     export TAG_COUNT_START_AT
+    
     mytempo_populate_tags
     
     "$MYTEMPO_DATA"/Offline/setup.offline
