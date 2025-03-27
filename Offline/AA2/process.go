@@ -107,6 +107,7 @@ func (a *Ay) Process() {
 	go func() {
 		for {
 			WifiPinger.Run()
+			<-time.After(1 * time.Second)
 			log.Println("PING STOPPED")
 		}
 	}()
