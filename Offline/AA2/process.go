@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -93,13 +94,17 @@ func (a *Ay) Process() {
 
 	var netPing atomic.Int64
 	var netState atomic.Bool
+
+	var lte4gState atomic.Bool
 	//var readerPing atomic.Int64
 
 	ReaderPinger := pinger.NewPinger(readerIP, &readerState, nil)
 	WifiPinger := pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
+	Lte4gPinger := pinger.NewPinger("192.168.100.1", &lte4gState, nil)
 
+	go Lte4gPinger.Run()
 	go ReaderPinger.Run()
-	go WifiPinger.Run()
+	go func() { WifiPinger.Run(); log.Println("PING STOPPED") }()
 
 	display, displayErr := lcdlogger.NewSerialDisplay()
 
@@ -161,7 +166,7 @@ func (a *Ay) Process() {
 				}
 
 				wiok := flick.OK
-				if !netState.Load() {
+				if !lte4gState.Load() {
 
 					wiok = flick.X
 				}
@@ -258,7 +263,15 @@ func (a *Ay) Process() {
 						ResetWifi()
 
 						WifiPinger.Stop()
-						go WifiPinger.Run()
+						go func() {
+							WifiPinger.Run()
+							log.Println("PING STOPPED")
+						}()
+					}
+				case lcdlogger.ACTION_4G_RESET:
+					{
+						PCReboot()
+						select {}
 					}
 				case lcdlogger.ACTION_RESET:
 					{

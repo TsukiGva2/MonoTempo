@@ -99,12 +99,12 @@ func (display *SerialDisplay) Screen4g(nome, commVerif int, leitorOk, lteOk int,
 		fmt.Sprintf(
 			"%d lbl %d num"+
 				" %d lbl %d val"+
-				" %d lbl %d ms"+
+				" %d lbl %d val"+
 				" %d lbl %d val",
 
 			flick.PORTAL, nome,
 			flick.LTE4G, lteOk,
-			flick.PING, LTE4GPING,
+			flick.LEITOR, leitorOk,
 			LABEL_ACTION_4G, 6,
 		),
 	)
