@@ -104,7 +104,12 @@ func (a *Ay) Process() {
 
 	go Lte4gPinger.Run()
 	go ReaderPinger.Run()
-	go func() { WifiPinger.Run(); log.Println("PING STOPPED") }()
+	go func() {
+		for {
+			WifiPinger.Run()
+			log.Println("PING STOPPED")
+		}
+	}()
 
 	display, displayErr := lcdlogger.NewSerialDisplay()
 
@@ -193,25 +198,27 @@ func (a *Ay) Process() {
 					commVerif,
 				)
 			case lcdlogger.SCREEN_USB:
-				devCheck, err := device.Check()
+				{
+					devCheck, err := device.Check()
 
-				if err != nil {
+					if err != nil {
 
-					continue
+						continue
+					}
+
+					devVerif := flick.X
+
+					if devCheck {
+
+						devVerif = flick.CONECTAD
+					}
+
+					display.ScreenUSB(
+						NUM_EQUIP,
+						commVerif,
+						devVerif,
+					)
 				}
-
-				devVerif := flick.X
-
-				if devCheck {
-
-					devVerif = flick.CONECTAD
-				}
-
-				display.ScreenUSB(
-					NUM_EQUIP,
-					commVerif,
-					devVerif,
-				)
 			case lcdlogger.SCREEN_INFO_EQUIP:
 				display.ScreenInfoEquip(NUM_EQUIP)
 			case lcdlogger.SCREEN_UPLOAD:
@@ -263,10 +270,6 @@ func (a *Ay) Process() {
 						ResetWifi()
 
 						WifiPinger.Stop()
-						go func() {
-							WifiPinger.Run()
-							log.Println("PING STOPPED")
-						}()
 					}
 				case lcdlogger.ACTION_4G_RESET:
 					{
