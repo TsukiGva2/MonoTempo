@@ -241,8 +241,6 @@ func (a *Ay) Process() {
 				display.ScreenTagRelatorio()
 			case lcdlogger.SCREEN_ATUALIZA:
 				display.ScreenAtualiza()
-			case lcdlogger.SCREEN_REBOOT:
-				display.ScreenReboot()
 			}
 
 			display.SwitchScreens()
@@ -290,11 +288,6 @@ func (a *Ay) Process() {
 						Reset4g()
 
 						Lte4gPinger.Stop()
-					}
-				case lcdlogger.ACTION_REBOOT:
-					{
-						PCReboot()
-						select {}
 					}
 				case lcdlogger.ACTION_RESET:
 					{
