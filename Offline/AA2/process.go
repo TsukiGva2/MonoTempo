@@ -13,6 +13,8 @@ import (
 	"aa2/lcdlogger"
 	"aa2/pinger"
 	"aa2/usb"
+
+	probing "github.com/prometheus-community/pro-bing"
 )
 
 func PopulateTagSet(tagSet *intSet.IntSet) {
@@ -98,6 +100,8 @@ func (a *Ay) Process() {
 	var lte4gState atomic.Bool
 	//var readerPing atomic.Int64
 
+	var WifiPinger *probing.Pinger
+
 	ReaderPinger := pinger.NewPinger(readerIP, &readerState, nil)
 	Lte4gPinger := pinger.NewPinger("192.168.100.1", &lte4gState, nil)
 
@@ -105,7 +109,7 @@ func (a *Ay) Process() {
 	go ReaderPinger.Run()
 	go func() {
 		for {
-			WifiPinger := pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
+			WifiPinger = pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
 			WifiPinger.Run()
 			<-time.After(1 * time.Second)
 			log.Println("PING STOPPED")
