@@ -257,8 +257,6 @@ func (a *Ay) Process() {
 						ResetWifi()
 
 						WifiPinger.Stop()
-						WifiPinger = pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
-
 						go WifiPinger.Run()
 					}
 				case lcdlogger.ACTION_RESET:
