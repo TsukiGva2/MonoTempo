@@ -241,6 +241,8 @@ func (a *Ay) Process() {
 				display.ScreenTagRelatorio()
 			case lcdlogger.SCREEN_ATUALIZA:
 				display.ScreenAtualiza()
+			case lcdlogger.SCREEN_REBOOT:
+				display.ScreenReboot()
 			}
 
 			display.SwitchScreens()
