@@ -6,7 +6,7 @@ reset_wifi() {
 
     nmcli conn down MyTempo
     sleep 2
-    nmcli conn up MyTempo
+    nmcli conn up MyTempo &
 }
 
 while true
