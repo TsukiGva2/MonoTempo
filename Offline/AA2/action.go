@@ -1,49 +1,29 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"os/exec"
 )
 
-func CreateUSBRelatorio() {
-	cmd := exec.Command("sh", "-c", "echo 'stats' > /var/monotempo-data/sig-upload-data")
+func CMD(s string) {
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("echo '%s' > /var/monotempo-data/sig-upload-data", s))
 	err := cmd.Run()
 	log.Println(err)
 }
 
-func ResetWifi() {
-	cmd := exec.Command("sh", "-c", "echo 'wifi' > /var/monotempo-data/sig-device-operation")
+func AUX(s string) {
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("echo '%s' > /var/monotempo-data/sig-device-operation", s))
 	err := cmd.Run()
 	log.Println(err)
 }
 
-func ResetarTudo() {
-	cmd := exec.Command("sh", "-c", "echo 'reset' > /var/monotempo-data/sig-upload-data")
-	err := cmd.Run()
-	log.Println(err)
-}
-
-func PCReboot() {
-	cmd := exec.Command("sh", "-c", "echo 'reboot' > /var/monotempo-data/sig-upload-data")
-	err := cmd.Run()
-	log.Println(err)
-}
-
-func UploadData() {
-	cmd := exec.Command("sh", "-c", "echo 'normal' > /var/monotempo-data/sig-upload-data")
-	err := cmd.Run()
-	log.Println(err)
-}
-
-func UploadBackup() {
-	cmd := exec.Command("sh", "-c", "echo 'backup' > /var/monotempo-data/sig-upload-data")
-	err := cmd.Run()
-	log.Println(err)
-}
-
-func CopyToUSB() {
-	cmd := exec.Command("sh", "-c", "echo 'save' > /var/monotempo-data/sig-upload-data")
-	err := cmd.Run()
-	log.Println(err)
-}
+func PCReboot()           { CMD("reboot") }
+func UploadData()         { CMD("normal") }
+func UploadBackup()       { CMD("backup") }
+func AtualizarEquip()     { CMD("update") }
+func CreateUSBRelatorio() { CMD("stats") }
+func ResetarTudo()        { CMD("reset") }
+func ResetWifi()          { AUX("wifi") }
+func CopyToUSB()          { CMD("save") }

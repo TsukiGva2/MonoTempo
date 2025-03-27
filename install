@@ -18,28 +18,32 @@ prompt_user() {
 # switch to update as default
 UPDATING=yes
 REMAKE_ENVIRONMENT=no
+INTERACTIVE=yes
 
 [ "$1" = "full" ] && UPDATING=no
+[ "$1" = "no_manual_setup" ] && INTERACTIVE=no
 
-# sets REMAKE_ENVIRONMENT to yes if any one of these is true
-#       1. shared.env doesnt exist
-#       2. Offline/AA2/aa2.env doesnt exist
-#       3. there is an "(environment)" in the commit message
-#       4. the user answers "y" to the query
-(
-    ! test -e shared.env \
-	|| ! test -e Offline/AA2/aa2.env \
-	|| git log --format=%B -n 1 | head -n 1 | grep "(environment)" > /dev/null \
-	|| (
-	    prompt_user "Do you wish to manually reconfigure your configuration files? (N/y): " WISH ;
-	    [ "$WISH" = "y" ]
+if [ "$INTERACTIVE" = "yes" ]; then
+    # sets REMAKE_ENVIRONMENT to yes if any one of these is true
+    #       1. shared.env doesnt exist
+    #       2. Offline/AA2/aa2.env doesnt exist
+    #       3. there is an "(environment)" in the commit message
+    #       4. the user answers "y" to the query
+    (
+	! test -e shared.env \
+	    || ! test -e Offline/AA2/aa2.env \
+	    || git log --format=%B -n 1 | head -n 1 | grep "(environment)" > /dev/null \
+	    || (
+		prompt_user "Do you wish to manually reconfigure your configuration files? (N/y): " WISH ;
+		[ "$WISH" = "y" ]
+	    )
+    ) \
+	&& REMAKE_ENVIRONMENT="yes" \
+	&& (
+	    cp shared.env.in shared.env
+	    cp Offline/AA2/aa2.env.in Offline/AA2/aa2.env
 	)
-) \
-    && REMAKE_ENVIRONMENT="yes" \
-    && (
-	cp shared.env.in shared.env
-	cp Offline/AA2/aa2.env.in Offline/AA2/aa2.env
-    )
+fi
 
 test -e database || mkdir database
 test -e database/backup || mkdir database/backup

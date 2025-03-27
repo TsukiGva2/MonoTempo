@@ -20,6 +20,7 @@ const (
 	SCREEN_UPLOAD
 	SCREEN_UPLOAD_BACKUP
 	SCREEN_TAG_RELATORIO
+	SCREEN_ATUALIZA
 
 	SCREEN_COUNT
 )
@@ -195,7 +196,11 @@ func (display *SerialDisplay) ScreenInfoEquip(nome int) {
 }
 
 func (display *SerialDisplay) ScreenTagRelatorio() {
+	display.DrawScreen("5 lbl")
+}
 
+func (display *SerialDisplay) ScreenAtualiza() {
+	display.DrawScreen("10 lbl")
 }
 
 func (display *SerialDisplay) ScreenConfirmaUpload() {

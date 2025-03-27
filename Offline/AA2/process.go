@@ -213,9 +213,10 @@ func (a *Ay) Process() {
 				display.ScreenConfirmaUpload()
 			case lcdlogger.SCREEN_UPLOAD_BACKUP:
 				display.ScreenConfirmaUploadBackup()
-
 			case lcdlogger.SCREEN_TAG_RELATORIO:
-
+				display.ScreenTagRelatorio()
+			case lcdlogger.SCREEN_ATUALIZA:
+				display.ScreenAtualiza()
 			}
 
 			display.SwitchScreens()
@@ -282,6 +283,11 @@ func (a *Ay) Process() {
 
 						tags.Store(0)
 						tagSet.Clear()
+					}
+				case lcdlogger.ACTION_ATUALIZA:
+					{
+						AtualizarEquip()
+						select {}
 					}
 				default:
 					goto out // no action

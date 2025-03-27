@@ -173,6 +173,14 @@ mytempo_populate_tags() {
     done 2> /dev/null | awk 'NF {print $3}' > "$DATABASE_DIR"/TAGS
 }
 
+mytempo_do_update() {
+
+    cd "$MYTEMPO_DATA" || exit
+    git pull
+    ./install no_manual_setup
+    reboot
+}
+
 echo "Chancelor, Version 1.1.0"
 
 echo "Backing up leftover data (if any)"
@@ -202,6 +210,7 @@ do
     
     case "$UPLOAD_TYPE" in
 	 "fatal") ;;
+	"update") mytempo_do_update ;;
 	 "stats") mytempo_usb_save_stats ;;
 	"backup") mytempo_upload_backup ;;
 	"normal") mytempo_upload_normal ;;
