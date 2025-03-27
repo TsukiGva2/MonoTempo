@@ -138,6 +138,8 @@ mytempo_clean() {
     
     not_empty "${ENVIO_DIR:?}" \
 	&& rm -rf "${ENVIO_DIR:?}"/*
+
+    rm "$DATABASE_DIR"/TAGS
 }
 
 mytempo_count_tags_dir() {
