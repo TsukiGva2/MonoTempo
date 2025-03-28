@@ -65,16 +65,19 @@ func NewJSONPinger(state *atomic.Bool) {
 	for {
 		<-tick.C
 
-		state.Store(false)
-
 		data := Form{
 			"deviceId": os.Getenv("MYTEMPO_EQUIP"),
 		}
 
 		err := JSONSimpleRequest(infoRota, data)
 
-		if err == nil {
-			state.Store(true)
+		if err != nil {
+
+			state.Store(false)
+
+			continue
 		}
+
+		state.Store(true)
 	}
 }
