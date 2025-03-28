@@ -94,13 +94,12 @@ func (a *Ay) Process() {
 	// var readerOctets = lcdlogger.IPIfy(readerIP)
 	var readerState atomic.Bool
 
-	var netPing atomic.Int64
+	//	var netPing atomic.Int64
 	var netState atomic.Bool
 
 	var lte4gState atomic.Bool
 	//var readerPing atomic.Int64
 
-	var WifiPinger *probing.Pinger
 	var Lte4gPinger *probing.Pinger
 
 	ReaderPinger := pinger.NewPinger(readerIP, &readerState, nil)
@@ -114,14 +113,8 @@ func (a *Ay) Process() {
 			log.Println("4gPING STOPPED")
 		}
 	}()
-	go func() {
-		for {
-			WifiPinger = pinger.NewPinger("mytempo.esp.br", &netState, &netPing)
-			WifiPinger.Run()
-			<-time.After(1 * time.Second)
-			log.Println("PING STOPPED")
-		}
-	}()
+
+	go pinger.NewJSONPinger(&netState)
 
 	display, displayErr := lcdlogger.NewSerialDisplay()
 
@@ -171,7 +164,7 @@ func (a *Ay) Process() {
 					commVerif,
 					/* leitor OK? */ ok,
 					/* internet OK? */ wiok,
-					netPing.Load(),
+					-1,
 				)
 			case lcdlogger.SCREEN_4G:
 
@@ -193,7 +186,7 @@ func (a *Ay) Process() {
 					commVerif,
 					/* leitor OK? */ ok,
 					/* internet OK? */ wiok,
-					netPing.Load(),
+					-1,
 				)
 			case lcdlogger.SCREEN_STAT:
 				display.ScreenStat(
@@ -280,8 +273,6 @@ func (a *Ay) Process() {
 				case lcdlogger.ACTION_WIFI_RESET:
 					{
 						ResetWifi()
-
-						WifiPinger.Stop()
 					}
 				case lcdlogger.ACTION_4G_RESET:
 					{

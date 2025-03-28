@@ -89,12 +89,12 @@ func (display *SerialDisplay) ScreenWifi(nome, commVerif int, leitorOk, wifiOk i
 		fmt.Sprintf(
 			"%d lbl %d num"+
 				" %d lbl %d val"+
-				" %d lbl %d ms"+
+				" fwd"+
 				" %d lbl %d val",
 
 			flick.PORTAL, nome,
-			flick.WIFI, wifiOk,
-			flick.PING, wifiPing,
+			flick.COMUNICANDO, wifiOk,
+
 			LABEL_ACTION_WIFI, 6,
 		),
 	)
