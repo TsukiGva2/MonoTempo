@@ -153,10 +153,10 @@ func (a *Ay) Process() {
 					ok = flick.DESLIGAD
 				}
 
-				wiok := 10
+				wiok := 9
 				if !netState.Load() {
 
-					wiok = 9
+					wiok = 10
 				}
 
 				display.ScreenWifi(
