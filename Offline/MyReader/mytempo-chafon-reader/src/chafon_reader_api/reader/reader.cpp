@@ -64,10 +64,14 @@ STATUS Reader::openAndFetchParams(DevicePara *param) {
 }
 
 void Reader::Buzzer(DevicePara *param) {
+
+  unsigned long result = 0x00;
   
   param->BUZZERTIME = 100;
 
   result = SetDevicePara(handle, *param);
+
+  INFOF( "set buzzertime OK? %d", result );
 }
 
 void Reader::SetFrequency() { // TODO: incomplete
