@@ -229,11 +229,7 @@ forth_label()
 {
   int v;
 
-  if ((v = n4_pop()) >= LABEL_COUNT || v < 0) {
-		char c,b[VIRT_SCR_COLS];for(int s=n4_pop(),b[s--]='\0';(s<=0)&&(c!=0);c=n4_pop(),b[s--]=c);
-		g_x+=virt_scr_sprintf("%s",b);
-		return;
-	}
+  if ((v = n4_pop()) >= LABEL_COUNT || v < 0) return;
 
   g_x = labels_len[v];
 
