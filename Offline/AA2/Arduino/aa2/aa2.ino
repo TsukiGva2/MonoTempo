@@ -1,18 +1,10 @@
-#include <LiquidCrystal_I2C.h>
 #include <string.h>
+
+#define __STDC_FORMAT_MACROS 
+#include <inttypes.h>
 
 #define BUTTON_VANCE 6
 #define BUTTON_START 7
-
-#define VIRT_SCR_COLS 20
-#define VIRT_SCR_ROWS 4
-
-char g_virt_scr[VIRT_SCR_ROWS][VIRT_SCR_COLS + 1];
-
-#define virt_scr_sprintf(x, y, fmt, ...) \
-  snprintf(g_virt_scr[y] + x, (VIRT_SCR_COLS - x), fmt, __VA_ARGS__);
-
-LiquidCrystal_I2C lcd(0x27, VIRT_SCR_COLS, VIRT_SCR_ROWS);
 
 /*
 | **Data**             | **Type** | **Description**                                            | **Target screen** | **Format**                                                                                                                       |
@@ -42,6 +34,37 @@ typedef struct __attribute__((packed)) PCData
 
 constexpr size_t pc_data_size = sizeof(PCData);
 
+PCData g_system_data;
+
+static void
+parseData(const char* data)
+{
+  sscanf(data, "%" PRId32 ";%" PRId32 ";%d;%d;%d;%d;%" PRId32 ";%" PRId32,
+              &g_system_data.tags,
+              &g_system_data.unique_tags,
+              &g_system_data.comm_status,
+              &g_system_data.wifi_status,
+              &g_system_data.lte4_status,
+              &g_system_data.rfid_status,
+              &g_system_data.sys_version,
+              &g_system_data.backups,
+              &g_system_data.envios);
+}
+
+/* SCREEN_H */
+#include <LiquidCrystal_I2C.h>
+#include <string.h>
+
+#define VIRT_SCR_COLS 20
+#define VIRT_SCR_ROWS 4
+
+char g_virt_scr[VIRT_SCR_ROWS][VIRT_SCR_COLS + 1];
+
+LiquidCrystal_I2C lcd(0x27, VIRT_SCR_COLS, VIRT_SCR_ROWS);
+
+#define virt_scr_sprintf(x, y, fmt, ...) \
+  snprintf(g_virt_scr[y] + x, (VIRT_SCR_COLS - x), fmt, __VA_ARGS__);
+
 /*
 | **Screen**              | **Content**                                      | **Description**                                                       | **Action (optional)**                                                                       |
 |-------------------------|--------------------------------------------------|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
@@ -56,48 +79,89 @@ constexpr size_t pc_data_size = sizeof(PCData);
 | #15 (Shutdown)          |                         -                        |                                   -                                   |                                              -                                              |
 | #15 (Shutdown [Helper]) |                         -                        |                                   -                                   |                                              -                                              |
 */
-// Screens
+#define SCREENS_COUNT 11
+unsigned int g_current_screen = 0;
+
+const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
+  "<START: Reset tela>",
+  "",
+  "<START: Reconectar>",
+  "",
+  "<START: Atualizar>",
+  "<START: Envia Regist>",
+};
 
 void
-handleButtons()
+screen_build()
 {
-//  (digitalRead(BUTTON_VANCE) == 0) && screen_advance();
-//  (digitalRead(BUTTON_START) == 0) && event_send_start();
+  virt_scr_sprintf(0, 0, "PORTAL my50x", 0);
+
+  switch (g_current_screen) {
+    case 0:
+      break;
+  }
+
+  virt_scr_sprintf(0, 3, "%s", desc[g_current_screen]);
 }
 
-#define START_DELIMITER 0x3C
-#define END_DELIMITER 0x3E
 void
-handleSerial()
-{  
-  char buf[pc_data_size];
-
-  if (Serial.available() < pc_data_size + 2) return;
-  if (Serial.read() != START_DELIMITER) goto consume_buf;
-
-consume_buf:
-  Serial.readBytes(pc_data_size + 1);
-}
-
-void
-draw()
+screen_draw()
 {
-  for (int i = 0; i < VIRT_SCR_ROWS; i++){
+  screen_build();
 
+  for (int i = 0; i < VIRT_SCR_ROWS; i++) {
     lcd.setCursor(0, i);
-
     for (char* c = g_virt_scr[i], i = 0; *c != '\0' && i < VIRT_SCR_COLS; c++, i++)
       lcd.write(*c);
   }
 }
 
 void
-setup()
+screen_init()
 {
   lcd.init();      // Initialize the LCD
   lcd.backlight(); // Turn on the backlight
-  
   memset(g_virt_scr, '\0', sizeof(g_virt_scr));
+}
+
+void
+handleButtons()
+{
+  if (digitalRead(BUTTON_VANCE) == 0)
+    g_current_screen = (g_current_screen + 1) % SCREENS_COUNT;
+
+  //(digitalRead(BUTTON_START) == 0) && event_send_start();
+}
+
+#define START_DELIMITER 0x3C
+#define END_DELIMITER 0x3E
+#define CAP 256
+void
+handleSerial()
+{  
+  char buf[CAP];
+  char imm[CAP];
+  int c, i;
+
+  while (Serial.available() > 0)
+    if (Serial.read() == START_DELIMITER) goto read_delimited;
+  
+  return;
+
+read_delimited:
+  for (i = 0; i < CAP && Serial.available() > 0 && (c = Serial.read()) != END_DELIMITER; i++) imm[i] = c;
+  if (c != END_DELIMITER) return;
+
+  memcpy(buf, imm, i);
+  buf[i] = '\0';
+
+  parseData(buf);
+}
+
+void
+setup()
+{
+  screen_init();
 
   Serial.begin(9600);
   while(!Serial);
@@ -111,5 +175,6 @@ loop()
 {
   handleButtons();
   handleSerial();
-  //draw();
+  screen_draw();
+  delay(200);
 }
