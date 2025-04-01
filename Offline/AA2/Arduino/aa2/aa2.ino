@@ -1,264 +1,87 @@
-//#include <EnableInterrupt.h>
 #include <LiquidCrystal_I2C.h>
-//#include <Wire.h>
-//#include <HardwareSerial.h>
-#include "nanoFORTH.h"
 #include <string.h>
 
-#define LABEL_COUNT 36
-
-const char* labels[] = {
-  "PORTAL   My",
-  "ATLETAS  ",
-  "REGIST.  ",
-  "COMUNICANDO ",
-  "LEITOR ",
-  "LTE/4G: ",
-  "WIFI: ",
-  "IP: ",
-  "LOCAL: ",
-  "PROVA: ",
-  "PING: ",
-  "HORA: ",
-  "USB: ",
-  "AGUARDE...",
-  "ERRO, TENTAR",
-  "  NOVAMENTE", // 15
-
-  "RFID  -  ",
-  "SERIE:   ",
-  "SIST.    ", // 18
-
-  "PRESSIONE",
-  "PARA CONFIRMAR", // 20
-
-  "OFFLINE",
-  "DATA: ", // 22
-
-  "PRESSIONE CONFIRMA",
-  "PARA FAZER UPLOAD",
-  "DE ATLETAS", // 25
-
-  "DOS BACKUPS", // 26
-
-  "UPLOAD EM ANDAMENTO", // 27
-
-  "<START: RESET TELA>",
-  "<START: RECONECTAR>",
-  "<START: RESET 4G>",
-  "<START: BACKUP USB>",
-  "<START: APAGA TUDO>", // 32
-
-	"<START: RELATORIO>",
-	"<START: ATUALIZAR>", // 34
-	"<START: RECARREGAR>" // 35
-};
-const int labels_len[LABEL_COUNT] = {
-  11,9,9,12,7,8,6,4,7,7,6,6,5,10,12,11,9,9,9,9,14,7,6,18,17,10,11,19,19,19,17,19,19,18,18,20
-};
-
-#define VALUE_COUNT 11
-
-const char* values[] = {
-  "WEB",
-  "CONECTAD",
-  "DESLIGAD",
-  "AUTOMATIC",
-  "OK",
-  "X",
-  "  ",
-  "A",
-  ": ",
-	"SIM",
-	"NAO"
-};
-
-const char code[] PROGMEM =          ///< define preload Forth code here
-
-// Button.fth
-  "VAR bac\n"
-  "VAR bst\n"
-  "VAR ba2\n"
-  "VAR bs2\n"
-  ": btn 6 IN 0 = ;\n"
-  ": bt2 7 IN 0 = ;\n"
-  ": b1 btn DUP bst @ NOT AND IF 1 bac ! THN bst ! ;\n"
-  ": b2 bt2 DUP bs2 @ NOT AND IF 1 ba2 ! THN bs2 ! ;\n"
-  ": chb b1 b2 ;\n"
-  ": ba@ bac @ . ;\n"
-  ": b2@ ba2 @ . ;\n"
-
-// Screen.fth
-  ": lbl  5   API ;\n"
-  ": fwd  2   API ;\n"
-  ": lit  API fwd ;\n"
-  ": fnm  1   lit ;\n"
-  ": fni  1   API ;\n" // Multi-Column
-  ": num  4   lit ;\n"
-  ": nui  4   API ;\n" // Multi-Column
-  ": val  6   lit ;\n"
-  ": ip   7   lit ;\n"
-  ": ms   3   lit ;\n"
-  ": hms  256 ip  ;\n"
-  ": usb  12  lbl ;\n"
-  ": tim  11  lbl ;\n"
-  ": hex  16  fnm ;\n"
-  
-  // Text Decorations
-  ": a    7 6 API ;\n" // Multi-Column
-  ": spc  6 6 API ;\n" // Multi-Column
-  ": sep  8 6 API ;\n" // Multi-Column
-
-  // Antenna Data
-  ": atn " // ( N Mag N Mag N Mag N Mag -- )
-    "a 1 nui sep fni spc a 2 nui sep fnm "
-    "a 3 nui sep fni spc a 4 nui sep fnm "
-  ";\n"
-
-  "10 0 TMI chb 1 TME\n"
-;
+#define BUTTON_VANCE 6
+#define BUTTON_START 7
 
 #define VIRT_SCR_COLS 20
 #define VIRT_SCR_ROWS 4
 
-uint8_t g_x, g_y;
-char g_virt_scr[VIRT_SCR_ROWS][VIRT_SCR_COLS];
+char g_virt_scr[VIRT_SCR_ROWS][VIRT_SCR_COLS + 1];
 
-#define virt_scr_sprintf(fmt, ...) \
-  snprintf(g_virt_scr[g_y] + g_x, ((VIRT_SCR_COLS + 1) - g_x), fmt, __VA_ARGS__);
+#define virt_scr_sprintf(x, y, fmt, ...) \
+  snprintf(g_virt_scr[y] + x, (VIRT_SCR_COLS - x), fmt, __VA_ARGS__);
 
 LiquidCrystal_I2C lcd(0x27, VIRT_SCR_COLS, VIRT_SCR_ROWS);
 
-void
-setup()
+/*
+| **Data**             | **Type** | **Description**                                            | **Target screen** | **Format**                                                                                                                       |
+|----------------------|----------|------------------------------------------------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| Tags                 | Int32    | Number of tags read by the RFID reader.                    | 1                 | %dK (K only included after 10K tags) |
+| Unique-Tags          | Int32    | Number of Unique tags read by the RFID reader.             | 1                 | %d                                                                                                                               |
+| Communication status | Bool     | Status of the connection between the PC and mytempo.esp.br | 2                 | SIM(True) / NÃO(False)                                                                                                           |
+| WI-FI status         | Bool     | Status of the general internet connection of the device.   | 3                 | OK(True) / X(false)                                                                                                              |
+| 4G status            | Bool     | Status of the LTE/4G connection of the device.             | 3                 | OK(True) / X(false)                                                                                                              |
+| Reader status        | Bool     | Status of the RFID reader.                                 | 4                 | OK(True) / X(false)                                                                                                              |
+| System version       | Int32    | Version number of the system.                              | 5                 | %d                                                                                                                               |
+| Backup count         | Int32    | Number of backups currently stored.                        | 6                 | %d                                                                                                                               |
+| Envio count          | Int32    | Number of envios currently stored.                         | 7                 | %d                                                                                                                               |
+*/
+typedef struct __attribute__((packed)) PCData
 {
-  lcd.init();      // Initialize the LCD
-  lcd.backlight(); // Turn on the backlight
-  
-  memset(g_virt_scr, '\0', sizeof(g_virt_scr));
+  int32_t tags       ;
+  int32_t unique_tags;
+  bool    comm_status;
+  bool    wifi_status;
+  bool    lte4_status;
+  bool    rfid_status;
+  int32_t sys_version;
+  int32_t backups    ;
+  int32_t envios     ;
+} PCData;
 
-  Serial.begin(115200);
-  while(!Serial);
+constexpr size_t pc_data_size = sizeof(PCData);
 
-  n4_setup(code);
+/*
+| **Screen**              | **Content**                                      | **Description**                                                       | **Action (optional)**                                                                       |
+|-------------------------|--------------------------------------------------|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| Info                    | - Regist.: (Tags)<br>- Atletas: (Unique-Tags)    | Displays the<br>tag count, and<br>unique tag count.                   | START: Reset visual tag data<br>information, does not<br>actually touch anything<br>stored. |
+| Network                 | - Comunicando: (Communication status)            | Displays the communication<br>with mytempo.esp.br                     |                                                                                             |
+| Network Mgmt            | - Wi-Fi: (WI-FI status)<br>- LTE/4G: (4G status) | Displays basic PC network<br>connectivity info.                       | START: Issue a reconnection<br>of both wifi and 4g networks.                                |
+| Reader info             | - Leitor: (Reader status)                        | Displays RFID reader<br>connectivity info.                            |                                                                                             |
+| System                  | - Version: (System version)                      | Displays the system version,<br>i.e. the current update.              | START: Fetch and Install the<br>latest version from github.                                 |
+| Upload                  | - Regist.: (Tags)<br>- Pendentes: (Envio count)  | Displays the current tag<br>count + the number of pending<br>uploads. | START: Upload all tag data<br>currently stored + pending<br>tag data.                       |
+| Upload (Backup)         | - Backups: (Backup count)                        | Displays the number of backups.                                       | START: Upload all backups.                                                                  |
+| #15 (Erase data)        |                         -                        |                                   -                                   |                                              -                                              |
+| #15 (Shutdown)          |                         -                        |                                   -                                   |                                              -                                              |
+| #15 (Shutdown [Helper]) |                         -                        |                                   -                                   |                                              -                                              |
+*/
+// Screens
 
-  n4_api(0, draw);
-  n4_api(1, print_forthNumber);
-  n4_api(2, forth_line_feed);
-  n4_api(3, forth_millis);
-
-  n4_api(4, forth_number);
-  n4_api(5, forth_label);
-  n4_api(6, forth_value);
-  n4_api(7, forth_ip);
-
-  pinMode(7, INPUT_PULLUP);
-  pinMode(6, INPUT_PULLUP);
+void
+handleButtons()
+{
+//  (digitalRead(BUTTON_VANCE) == 0) && screen_advance();
+//  (digitalRead(BUTTON_START) == 0) && event_send_start();
 }
 
+#define START_DELIMITER 0x3C
+#define END_DELIMITER 0x3E
 void
-forth_millis()
-{
-  int v;
+handleSerial()
+{  
+  char buf[pc_data_size];
 
-  if ((v = n4_pop()) < 1000) {
-    g_x += virt_scr_sprintf("%dms", v);
-    return;
-  }
+  if (Serial.available() < pc_data_size + 2) return;
+  if (Serial.read() != START_DELIMITER) goto consume_buf;
 
-  v /= 1000;
-  g_x += virt_scr_sprintf("%ds", v);
-}
-
-void
-forth_value()
-{
-  int v;
-
-  if ((v = n4_pop()) > VALUE_COUNT || v < 0) return;
-
-  g_x += virt_scr_sprintf("%s", values[v]);
-}
-
-void
-print_forthNumber()
-{
-  int mag, v;
-  char postfix;
-
-  mag = n4_pop();
-  v = n4_pop();
-
-  if (mag == 16) { // (special case) hex
-	  g_x += virt_scr_sprintf("%04x", v);
-	  return;
-  }
-
-  postfix = (mag == 0) ?
-      ' ' :
-      (mag >= 3 && mag < 6 ? 'K' : 'M');
-
-  // 'X'  if Magnitude = 0, 'XK' if 6 > Magnitude >= 3
-  // 'XM' if Magnitude >= 6
-
-  g_x += virt_scr_sprintf("%d%c", v, postfix);
-}
-
-void
-forth_ip()
-{
-  int f = n4_pop();
-
-  if (f >= 0xDA7E) {
-    g_x += virt_scr_sprintf("%02d/%02d/%04d", n4_pop(), n4_pop(), n4_pop());
-  } else if (f >= 256) {
-    g_x += virt_scr_sprintf("%02d:%02d:%02d", n4_pop(), n4_pop(), n4_pop());
-  } else {
-    g_x += virt_scr_sprintf( "%d.%d.%d.%d", n4_pop(), n4_pop(), n4_pop(), f);
-  }
-}
-
-void
-forth_number()
-{
-  g_x += virt_scr_sprintf("%d", n4_pop());
-}
-
-void
-forth_label()
-{
-  int v;
-
-  if ((v = n4_pop()) >= LABEL_COUNT || v < 0) return;
-
-  g_x = labels_len[v];
-
-  memcpy(g_virt_scr[g_y], labels[v], labels_len[v]);
-}
-
-void
-forth_line_feed()
-{
-  for (; g_x < VIRT_SCR_COLS - 1; g_x++)
-    g_virt_scr[g_y][g_x] = ' ';
-
-  g_virt_scr[g_y][g_x] = '\0';
-
-  g_x = 0;
-
-  g_y++;
-
-  if (g_y >= (VIRT_SCR_ROWS - 1))
-    g_y = VIRT_SCR_ROWS - 1;
+consume_buf:
+  Serial.readBytes(pc_data_size + 1);
 }
 
 void
 draw()
 {
-  // resetting
-  g_y = 0;
-  g_x = 0;
-
   for (int i = 0; i < VIRT_SCR_ROWS; i++){
 
     lcd.setCursor(0, i);
@@ -269,7 +92,24 @@ draw()
 }
 
 void
+setup()
+{
+  lcd.init();      // Initialize the LCD
+  lcd.backlight(); // Turn on the backlight
+  
+  memset(g_virt_scr, '\0', sizeof(g_virt_scr));
+
+  Serial.begin(9600);
+  while(!Serial);
+
+  pinMode(BUTTON_START, INPUT_PULLUP);
+  pinMode(BUTTON_VANCE, INPUT_PULLUP);
+}
+
+void
 loop()
 {
-  n4_run();
+  handleButtons();
+  handleSerial();
+  //draw();
 }
