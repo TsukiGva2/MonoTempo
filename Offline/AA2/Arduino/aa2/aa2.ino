@@ -1,6 +1,81 @@
+/**
+ * @file aa2.ino
+ * @brief This file contains the implementation of a system for managing and displaying
+ *        RFID reader data, network status, and system information on an LCD screen.
+ *        It also handles user input through buttons and serial communication.
+ *
+ * @details
+ * The system is designed to:
+ * - Display various system statuses and data on an LCD screen.
+ * - Handle button inputs to navigate between screens and trigger actions.
+ * - Parse and process data received via serial communication.
+ * - Lock and unlock the screen for specific operations.
+ * - Provide confirmation prompts for critical actions.
+ *
+ * @author Rodrigo Monteiro Junior
+ * @date 2025-03-04
+ *
+ * @dependencies
+ * - SafeString.h: For safe string handling.
+ * - SafeStringReader.h: For reading and parsing serial input.
+ * - LiquidCrystal_I2C.h: For controlling the LCD screen.
+ * - Standard C++ libraries: string.h, inttypes.h.
+ *
+ * @hardware
+ * - 20x4 LCD screen with I2C interface.
+ * - Two buttons connected to digital pins (BUTTON_VANCE and BUTTON_START).
+ * - RFID reader for tag data.
+ *
+ * @sections
+ * - Data Structures:
+ *   - PCData: A packed struct to hold system data such as tag counts, statuses, and version info.
+ * - Global Variables:
+ *   - g_system_data: Holds the current system data.
+ *   - g_current_screen: Tracks the currently displayed screen.
+ *   - g_locked: Indicates whether the screen is locked.
+ *   - g_screen_waiting_confirmation: Indicates if the system is waiting for user confirmation.
+ * - Functions:
+ *   - check_clicked(): Checks if a button is clicked and returns the button ID.
+ *   - parse_data(): Parses serial input to update system data.
+ *   - screen_build(): Builds the virtual screen content based on the current screen.
+ *   - screen_draw(): Draws the virtual screen content on the LCD.
+ *   - screen_lock(): Locks the screen for specific operations.
+ *   - screen_unlock(): Unlocks the screen after operations.
+ *   - screen_next(): Navigates to the next screen.
+ *   - screen_confirm(): Prepares the system for a confirmation action.
+ *   - screen_wait_confirm(): Handles the confirmation waiting state.
+ *   - event_send(): Sends the current screen's event via serial communication.
+ *   - handle_serial(): Handles serial input and updates the system state.
+ *   - handle_buttons(): Handles button inputs for navigation and actions.
+ *   - setup(): Initializes the system, LCD, and serial communication.
+ *   - loop(): Main program loop to handle tasks and update the screen.
+ *
+ * @screens
+ * - Informational screens:
+ *   - Display tag counts, network statuses, system version, and more.
+ * - Action screens:
+ *   - Allow actions like uploading data, resetting, or shutting down.
+ * - Confirmation screens:
+ *   - Prompt the user for confirmation before critical actions.
+ *
+ * @constants
+ * - BUTTON_VANCE, BUTTON_START: Digital pins for buttons.
+ * - START_DELIMITER, END_DELIMITER: Delimiters for serial communication.
+ * - NAV_SCREENS_COUNT, SCREENS_COUNT: Number of navigable and total screens.
+ * - VIRT_SCR_COLS, VIRT_SCR_ROWS: Dimensions of the virtual screen buffer.
+ *
+ * @usage
+ * - Use the buttons to navigate between screens and trigger actions.
+ * - Monitor the LCD for system statuses and prompts.
+ * - Send data via serial communication in the expected format for updates.
+ */
+
+#include <SafeString.h>
+#include <SafeStringReader.h>
+
 #include <string.h>
 
-#define __STDC_FORMAT_MACROS 
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 #define BUTTON_VANCE 6
@@ -9,23 +84,28 @@
 bool g_clicked_vance = false;
 bool g_clicked_start = false;
 
-int
-check_clicked()
+int check_clicked()
 {
-  if (digitalRead(BUTTON_VANCE) == 0) {
-    if (!g_clicked_vance) {
+  if (digitalRead(BUTTON_VANCE) == 0)
+  {
+    if (!g_clicked_vance)
+    {
       g_clicked_vance = true;
       return BUTTON_VANCE;
     }
-  } else
+  }
+  else
     g_clicked_vance = false;
 
-  if (digitalRead(BUTTON_START) == 0) {
-    if (!g_clicked_start) {
+  if (digitalRead(BUTTON_START) == 0)
+  {
+    if (!g_clicked_start)
+    {
       g_clicked_start = true;
       return BUTTON_START;
     }
-  } else
+  }
+  else
     g_clicked_start = false;
 
   return 0;
@@ -46,34 +126,79 @@ check_clicked()
 */
 typedef struct __attribute__((packed)) PCData
 {
-  int32_t tags       ;
-  int32_t unique_tags;
-  bool    comm_status;
-  bool    wifi_status;
-  bool    lte4_status;
-  bool    rfid_status;
-  int32_t sys_version;
-  int32_t backups    ;
-  int32_t envios     ;
+  int64_t tags;
+  int unique_tags;
+  bool comm_status;
+  bool wifi_status;
+  bool lte4_status;
+  bool rfid_status;
+  int sys_version;
+  int backups;
+  int envios;
 } PCData;
 
 constexpr size_t pc_data_size = sizeof(PCData);
 
 PCData g_system_data;
 
+// create a SafeString reader to read the struct data
+createSafeStringReader(serial_reader, 80, '\n', true);
+
 static void
-parse_data(const char* data)
+parse_data(SafeString &msg)
 {
-  sscanf(data, "%" PRId32 ";%" PRId32 ";%d;%d;%d;%d;%" PRId32 ";%" PRId32,
-              &g_system_data.tags,
-              &g_system_data.unique_tags,
-              &g_system_data.comm_status,
-              &g_system_data.wifi_status,
-              &g_system_data.lte4_status,
-              &g_system_data.rfid_status,
-              &g_system_data.sys_version,
-              &g_system_data.backups,
-              &g_system_data.envios);
+  cSF(field, 11);
+
+  char delims[] = ";";
+  bool returnEmptyFields = true;
+  
+  int idx = 0;
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  if (field != "$MYTMP") {
+    return;
+  }
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  if (!field.toInt64_t(g_system_data.tags))
+    return;
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  if (!field.toInt(g_system_data.unique_tags))
+    return;
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  g_system_data.comm_status = field.equals("1");
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  g_system_data.wifi_status = field.equals("1");
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  g_system_data.lte4_status = field.equals("1");
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  g_system_data.rfid_status = field.equals("1");
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  if (!field.toInt(g_system_data.sys_version))
+    return;
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  if (!field.toInt(g_system_data.backups))
+    return;
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  if (!field.toInt(g_system_data.envios))
+    return;
 }
 
 /* SCREEN_H */
@@ -87,7 +212,7 @@ char g_virt_scr[VIRT_SCR_ROWS][VIRT_SCR_COLS + 1];
 
 LiquidCrystal_I2C lcd(0x27, VIRT_SCR_COLS, VIRT_SCR_ROWS);
 
-const char fill_pattern[20] = "                    ";
+const char fill_pattern[20] = "                   ";
 
 #define virt_scr_sprintf(x, y, fmt, ...) \
   snprintf(g_virt_scr[y] + x, (VIRT_SCR_COLS - x), fmt, __VA_ARGS__);
@@ -128,83 +253,84 @@ const char fill_pattern[20] = "                    ";
 unsigned int g_current_screen = 0;
 unsigned int g_confirm_target = 0; // target screen for events that need confirmation
 
-bool    g_locked;
-bool    g_screen_waiting_confirmation;
+bool g_locked;
+bool g_screen_waiting_confirmation;
 int32_t g_screen_waiting_timestamp;
 
 const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
-  "START:Reset tela   ",
-  "                   ",
-  "START:Reconectar   ",
-  "                   ",
-  "START:Atualizar    ",
-  "START:Upload Regist",
-  "START:Upload Backup",
-  "START:Apagar tudo  ",
-  "START:Desligar     ",
-  "                   ",
-  "START:Confirma     ",
-  "                   "
-};
+    "START:Reset tela   ",
+    "                   ",
+    "START:Reconectar   ",
+    "                   ",
+    "START:Atualizar    ",
+    "START:Upload Regist",
+    "START:Upload Backup",
+    "START:Apagar tudo  ",
+    "START:Desligar     ",
+    "                   ",
+    "START:Confirma     ",
+    "                   "};
 
-void
-screen_build()
+void screen_build()
 {
   unsigned int l1 = 0, l2 = 0;
 
-  if (g_current_screen < 5) {
+  if (g_current_screen < 5)
+  {
     virt_scr_sprintf(0, 0, "PORTAL my50x", 0);
-  } else
+  }
+  else
     virt_scr_fill_from(0, 0);
 
-  switch (g_current_screen) {
-    case INFORM_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Regist.: %" PRId32, g_system_data.tags);
-      l2 = virt_scr_sprintf(0, 2, "Atletas: %" PRId32, g_system_data.unique_tags);
-      break;
-    case NETWRK_SCREEN:
-      l2 = virt_scr_sprintf(0, 2, "Comunicando: %3s", g_system_data.comm_status ? "SIM" : "NAO");
-      break;
-    case NETCFG_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Wi-Fi: %2s", g_system_data.wifi_status ? "OK" : "X");
-      l2 = virt_scr_sprintf(0, 2, "LTE/4G: %2s", g_system_data.lte4_status ? "OK" : "X");
-      break;
-    case READER_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Leitor: %2s", g_system_data.rfid_status ? "OK" : "X");
-      break;
-    case SYSTEM_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Versao: %" PRId32, g_system_data.sys_version);
-      break;
-    case UPLOAD_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Atletas: %" PRId32, g_system_data.unique_tags);
-      //l2 = virt_scr_sprintf(0, 2, "Pendentes: %" PRId32, g_system_data.envios);
-      break;
-    case BACKUP_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Backups: %" PRId32, g_system_data.backups);
-      break;
-    case DELETE_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Apagar dados", NULL);
-      l2 = virt_scr_sprintf(0, 2, "do equipamento", NULL);
-      break;
-    case SHTDWN_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Desligar o", NULL);
-      l2 = virt_scr_sprintf(0, 2, "equipamento", NULL);
-      break;
-    
+  switch (g_current_screen)
+  {
+  case INFORM_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Regist.: %" PRId32, g_system_data.tags);
+    l2 = virt_scr_sprintf(0, 2, "Atletas: %" "d", g_system_data.unique_tags);
+    break;
+  case NETWRK_SCREEN:
+    l2 = virt_scr_sprintf(0, 2, "Comunicando: %3s", g_system_data.comm_status ? "SIM" : "NAO");
+    break;
+  case NETCFG_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Wi-Fi: %2s", g_system_data.wifi_status ? "OK" : "X");
+    l2 = virt_scr_sprintf(0, 2, "LTE/4G: %2s", g_system_data.lte4_status ? "OK" : "X");
+    break;
+  case READER_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Leitor: %2s", g_system_data.rfid_status ? "OK" : "X");
+    break;
+  case SYSTEM_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Versao: %" "d", g_system_data.sys_version);
+    break;
+  case UPLOAD_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Atletas: %" "d", g_system_data.unique_tags);
+    // l2 = virt_scr_sprintf(0, 2, "Pendentes: %" "d", g_system_data.envios);
+    break;
+  case BACKUP_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Backups: %" "d", g_system_data.backups);
+    break;
+  case DELETE_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Apagar dados", NULL);
+    l2 = virt_scr_sprintf(0, 2, "do equipamento", NULL);
+    break;
+  case SHTDWN_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Desligar o", NULL);
+    l2 = virt_scr_sprintf(0, 2, "equipamento", NULL);
+    break;
+
     /* end of NAV_SCREENS */
     /* Extra screens */
 
-    case OFFMSG_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Aguarde 30 segundos", NULL);
-      l2 = virt_scr_sprintf(0, 2, "E pressione POWER", NULL);
-      break;
-    case CONFRM_SCREEN:
-      l1 = virt_scr_sprintf(0, 1, "Pressione START", NULL);
-      l2 = virt_scr_sprintf(0, 2, "para confirmar", NULL);
-      break;
-    case WAITNG_SCREEN:
-      l2 = virt_scr_sprintf(0, 2, "Aguarde...", NULL);
-      break;
+  case OFFMSG_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Aguarde 30 segundos", NULL);
+    l2 = virt_scr_sprintf(0, 2, "E pressione POWER", NULL);
+    break;
+  case CONFRM_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Pressione START", NULL);
+    l2 = virt_scr_sprintf(0, 2, "para confirmar", NULL);
+    break;
+  case WAITNG_SCREEN:
+    l2 = virt_scr_sprintf(0, 2, "Aguarde...", NULL);
+    break;
   }
 
   virt_scr_fill_from(l1, 1);
@@ -213,30 +339,27 @@ screen_build()
   virt_scr_sprintf(0, 3, "%s", desc[g_current_screen]);
 }
 
-void
-screen_unlock()
+void screen_unlock()
 {
-  if (!g_locked) return;
+  if (!g_locked)
+    return;
 
   g_current_screen = 0;
   g_locked = false;
 }
 
-void
-screen_lock()
+void screen_lock()
 {
   g_current_screen = WAITNG_SCREEN;
   g_locked = true;
 }
 
-void
-screen_next()
+void screen_next()
 {
   g_current_screen = (g_current_screen + 1) % NAV_SCREENS_COUNT;
 }
 
-void
-screen_confirm()
+void screen_confirm()
 {
   g_screen_waiting_timestamp = millis();
   g_screen_waiting_confirmation = true;
@@ -244,34 +367,34 @@ screen_confirm()
   g_current_screen = CONFRM_SCREEN;
 }
 
-void
-screen_wait_confirm()
+void screen_wait_confirm()
 {
-  if (check_clicked()) {
+  if (check_clicked())
+  {
     g_screen_waiting_confirmation = false;
     event_send();
   }
 
-  if (millis() - g_screen_waiting_timestamp > 2000) {
+  if (millis() - g_screen_waiting_timestamp > 2000)
+  {
     g_screen_waiting_confirmation = false;
     g_current_screen = g_confirm_target;
   }
 }
 
-void
-screen_draw()
+void screen_draw()
 {
   screen_build();
 
-  for (int i = 0; i < VIRT_SCR_ROWS; i++) {
+  for (int i = 0; i < VIRT_SCR_ROWS; i++)
+  {
     lcd.setCursor(0, i);
-    for (char* c = g_virt_scr[i], i = 0; *c != '\0' && i < VIRT_SCR_COLS; c++, i++)
+    for (char *c = g_virt_scr[i], i = 0; *c != '\0' && i < VIRT_SCR_COLS; c++, i++)
       lcd.write(*c);
   }
 }
 
-void
-screen_init()
+void screen_init()
 {
   lcd.init();      // Initialize the LCD
   lcd.backlight(); // Turn on the backlight
@@ -280,11 +403,11 @@ screen_init()
 
 #define START_DELIMITER 0x3C
 #define END_DELIMITER 0x3E
-void
-event_send()
+void event_send()
 {
   // screens that need confirmation
-  if (g_current_screen == DELETE_SCREEN || g_current_screen == SHTDWN_SCREEN) {
+  if (g_current_screen == DELETE_SCREEN || g_current_screen == SHTDWN_SCREEN)
+  {
     screen_confirm();
     return;
   }
@@ -299,66 +422,66 @@ event_send()
   screen_lock();
 }
 
-#define CAP 256
-void
-handle_serial()
-{  
-  char buf[CAP];
-  char imm[CAP];
-  int c, i;
+void handle_serial()
+{
 
-  while (Serial.available() > 0)
-    if (Serial.read() == START_DELIMITER) goto read_delimited;
-  
-  return;
+  //serial_reader.skipToDelimiter();
+  if (serial_reader.read())
+  {
+    serial_reader.trim();
+    if (serial_reader.startsWith("$MYTMP;"))
+    {
+      parse_data(serial_reader);
+    }
+  }
 
-read_delimited:
-  for (i = 0; i < CAP && Serial.available() > 0 && (c = Serial.read()) != END_DELIMITER; i++) imm[i] = c;
-  if (c != END_DELIMITER) return;
-
-  memcpy(buf, imm, i);
-  buf[i] = '\0';
-
-  parse_data(buf);
+  // parse_data(buf);
 
   // a successful data receival toggles an UNLOCK
   screen_unlock();
 }
 
-void
-handle_buttons()
+void handle_buttons()
 {
   // LOCKED
-  if (g_locked) return;
+  if (g_locked)
+    return;
 
-  switch (check_clicked()) {
-    case BUTTON_VANCE:
-      screen_next();
-      break;
-    case BUTTON_START:
-      event_send();
-      break;
+  switch (check_clicked())
+  {
+  case BUTTON_VANCE:
+    screen_next();
+    break;
+  case BUTTON_START:
+    event_send();
+    break;
   }
 }
 
-void
-setup()
+void setup()
 {
   screen_init();
 
-  Serial.begin(9600);
-  while(!Serial);
+  Serial.begin(115200);
+  while (!Serial)
+    ;
+
+  //SafeString::setOutput(Serial); // enable error messages and SafeString.debug() output to be sent to Serial
+  serial_reader.connect(Serial); // where SafeStringReader will read from
+  //serial_reader.echoOn();        // echo back all input, by default echo is off
+  //serial_reader.setTimeout(200);
 
   pinMode(BUTTON_START, INPUT_PULLUP);
   pinMode(BUTTON_VANCE, INPUT_PULLUP);
 }
 
-void
-loop()
+void loop()
 {
   handle_serial();
-  if (g_locked)                      goto skip_screen_tasks;
-  if (g_screen_waiting_confirmation) goto wait_confirm;
+  if (g_locked)
+    goto skip_screen_tasks;
+  if (g_screen_waiting_confirmation)
+    goto wait_confirm;
 
   handle_buttons();
   screen_draw();
