@@ -28,7 +28,7 @@
  *
  * @sections
  * - Data Structures:
- *   - PCData: A packed struct to hold system data such as tag counts, statuses, and version info.
+ *   - PCData: A struct to hold system data such as tag counts, statuses, and version info.
  * - Global Variables:
  *   - g_system_data: Holds the current system data.
  *   - g_current_screen: Tracks the currently displayed screen.
@@ -72,6 +72,8 @@
 
 #include <SafeString.h>
 #include <SafeStringReader.h>
+
+#include <time.h>
 
 #include <string.h>
 
@@ -124,7 +126,7 @@ int check_clicked()
 | Backup count         | Int32    | Number of backups currently stored.                        | 6                 | %d                                                                                                                               |
 | Envio count          | Int32    | Number of envios currently stored.                         | 7                 | %d                                                                                                                               |
 */
-typedef struct __attribute__((packed)) PCData
+typedef struct PCData
 {
   int64_t tags;
   int unique_tags;
@@ -135,6 +137,14 @@ typedef struct __attribute__((packed)) PCData
   int sys_version;
   int backups;
   int envios;
+
+  // DateTime
+  int year;
+  int month;
+  int day;
+  int hour;
+  int minute;
+  int second;
 } PCData;
 
 constexpr size_t pc_data_size = sizeof(PCData);
@@ -144,18 +154,84 @@ PCData g_system_data;
 // create a SafeString reader to read the struct data
 createSafeStringReader(serial_reader, 80, '\n', true);
 
+bool check_sum(SafeString &msg)
+{
+  int idx_star = msg.indexOf('*');
+
+  cSF(check_sum_hex, 2);
+
+  msg.substring(check_sum_hex, idx_star + 1);
+
+  long sum = 0;
+
+  if (!check_sum_hex.hexToLong(sum))
+  {
+    return false;
+  }
+
+  for (size_t i = 1; i < idx_star; i++)
+  {
+    sum ^= msg[i];
+  }
+
+  return (sum == 0);
+}
+
+bool parse_time(SafeString &timeField)
+{
+  int64_t stime = 0;
+
+  if (!timeField.toInt64_t(stime))
+  {
+    return false;
+  }
+
+  if (stime < 0)
+  {
+    return false;
+  }
+
+  if (stime > 2147483647)
+  {
+    return false;
+  }
+
+  if (stime < UNIX_OFFSET) // 2000-01-01 00:00:00
+  {
+    return false;
+  }
+
+  stime -= UNIX_OFFSET;
+
+  time_t time = static_cast<time_t>(stime);
+
+  struct tm *tm_ptr = gmtime(&time);
+  if (!tm_ptr)
+    return false;
+
+  g_system_data.year = tm_ptr->tm_year + 1900;
+  g_system_data.month = tm_ptr->tm_mon + 1;
+  g_system_data.day = tm_ptr->tm_mday;
+  g_system_data.hour = tm_ptr->tm_hour;
+  g_system_data.minute = tm_ptr->tm_min;
+  g_system_data.second = tm_ptr->tm_sec;
+
+  return true;
+}
+
 static void
 parse_data(SafeString &msg)
 {
   cSF(field, 11);
 
-  char delims[] = ";";
+  char delims[] = ";*";
   bool returnEmptyFields = true;
-  
+
   int idx = 0;
   idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (field != "$MYTMP") {
+  if (field != "$MYTMP")
+  {
     return;
   }
 
@@ -199,6 +275,11 @@ parse_data(SafeString &msg)
 
   if (!field.toInt(g_system_data.envios))
     return;
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+  if (!parse_time(field))
+    return;
 }
 
 /* SCREEN_H */
@@ -239,17 +320,18 @@ const char fill_pattern[20] = "                   ";
 #define NETWRK_SCREEN 1
 #define NETCFG_SCREEN 2
 #define READER_SCREEN 3
-#define SYSTEM_SCREEN 4
-#define UPLOAD_SCREEN 5
-#define BACKUP_SCREEN 6
-#define DELETE_SCREEN 7
-#define SHTDWN_SCREEN 8
-#define NAV_SCREENS_COUNT 9
+#define DATTME_SCREEN 4
+#define SYSTEM_SCREEN 5
+#define UPLOAD_SCREEN 6
+#define BACKUP_SCREEN 7
+#define DELETE_SCREEN 8
+#define SHTDWN_SCREEN 9
+#define NAV_SCREENS_COUNT 10
 
-#define OFFMSG_SCREEN 9
-#define CONFRM_SCREEN 10
-#define WAITNG_SCREEN 11
-#define SCREENS_COUNT 12
+#define OFFMSG_SCREEN 10
+#define CONFRM_SCREEN 11
+#define WAITNG_SCREEN 12
+#define SCREENS_COUNT 13
 unsigned int g_current_screen = 0;
 unsigned int g_confirm_target = 0; // target screen for events that need confirmation
 
@@ -261,6 +343,7 @@ const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
     "START:Reset tela   ",
     "                   ",
     "START:Reconectar   ",
+    "                   ",
     "                   ",
     "START:Atualizar    ",
     "START:Upload Regist",
@@ -275,7 +358,7 @@ void screen_build()
 {
   unsigned int l1 = 0, l2 = 0;
 
-  if (g_current_screen < 5)
+  if (g_current_screen < 6)
   {
     virt_scr_sprintf(0, 0, "PORTAL my50x", 0);
   }
@@ -286,7 +369,9 @@ void screen_build()
   {
   case INFORM_SCREEN:
     l1 = virt_scr_sprintf(0, 1, "Regist.: %" PRId32, g_system_data.tags);
-    l2 = virt_scr_sprintf(0, 2, "Atletas: %" "d", g_system_data.unique_tags);
+    l2 = virt_scr_sprintf(0, 2, "Atletas: %"
+                                "d",
+                          g_system_data.unique_tags);
     break;
   case NETWRK_SCREEN:
     l2 = virt_scr_sprintf(0, 2, "Comunicando: %3s", g_system_data.comm_status ? "SIM" : "NAO");
@@ -298,15 +383,25 @@ void screen_build()
   case READER_SCREEN:
     l1 = virt_scr_sprintf(0, 1, "Leitor: %2s", g_system_data.rfid_status ? "OK" : "X");
     break;
+  case DATTME_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Data: %02d/%02d/%04d", g_system_data.day, g_system_data.month, g_system_data.year);
+    l2 = virt_scr_sprintf(0, 2, "Hora: %02d:%02d:%02d", g_system_data.hour, g_system_data.minute, g_system_data.second);
+    break;
   case SYSTEM_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Versao: %" "d", g_system_data.sys_version);
+    l1 = virt_scr_sprintf(0, 1, "Versao: %"
+                                "d",
+                          g_system_data.sys_version);
     break;
   case UPLOAD_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Atletas: %" "d", g_system_data.unique_tags);
+    l1 = virt_scr_sprintf(0, 1, "Atletas: %"
+                                "d",
+                          g_system_data.unique_tags);
     // l2 = virt_scr_sprintf(0, 2, "Pendentes: %" "d", g_system_data.envios);
     break;
   case BACKUP_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Backups: %" "d", g_system_data.backups);
+    l1 = virt_scr_sprintf(0, 1, "Backups: %"
+                                "d",
+                          g_system_data.backups);
     break;
   case DELETE_SCREEN:
     l1 = virt_scr_sprintf(0, 1, "Apagar dados", NULL);
@@ -425,10 +520,14 @@ void event_send()
 void handle_serial()
 {
 
-  //serial_reader.skipToDelimiter();
+  // serial_reader.skipToDelimiter();
   if (serial_reader.read())
   {
     serial_reader.trim();
+
+    if (!check_sum(serial_reader))
+      return;
+
     if (serial_reader.startsWith("$MYTMP;"))
     {
       parse_data(serial_reader);
@@ -466,10 +565,10 @@ void setup()
   while (!Serial)
     ;
 
-  //SafeString::setOutput(Serial); // enable error messages and SafeString.debug() output to be sent to Serial
+  // SafeString::setOutput(Serial); // enable error messages and SafeString.debug() output to be sent to Serial
   serial_reader.connect(Serial); // where SafeStringReader will read from
-  //serial_reader.echoOn();        // echo back all input, by default echo is off
-  //serial_reader.setTimeout(200);
+  // serial_reader.echoOn();        // echo back all input, by default echo is off
+  // serial_reader.setTimeout(200);
 
   pinMode(BUTTON_START, INPUT_PULLUP);
   pinMode(BUTTON_VANCE, INPUT_PULLUP);
@@ -485,7 +584,7 @@ void loop()
 
   handle_buttons();
   screen_draw();
-  delay(50);
+  delayMicroseconds(500);
   return;
 
 skip_screen_tasks:
