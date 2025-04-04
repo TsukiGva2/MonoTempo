@@ -574,25 +574,33 @@ void setup()
   pinMode(BUTTON_VANCE, INPUT_PULLUP);
 }
 
+unsigned long previous_millis = 0;
+
 void loop()
 {
   handle_serial();
-  if (g_locked)
-    goto skip_screen_tasks;
-  if (g_screen_waiting_confirmation)
-    goto wait_confirm;
 
-  handle_buttons();
-  screen_draw();
-  delayMicroseconds(500);
-  return;
+  // blink without delay
+  unsigned long ms = millis();
 
-skip_screen_tasks:
-  delay(200);
-  return;
+  if (ms - previous_millis >= 5) {
+    // if the screen is locked, skip the screen tasks
+    // if the screen is waiting for confirmation, skip the screen tasks
+    // if (g_screen_waiting_confirmation)
+    //   goto wait_confirm;
+    // if the screen is waiting for confirmation, skip the screen tasks
+  
+    previous_millis = ms;
 
-wait_confirm:
-  screen_wait_confirm();
-  screen_draw();
-  delay(50);
+    if (g_locked)
+      return;
+
+    if (g_screen_waiting_confirmation)
+    {
+      screen_wait_confirm();
+    } else
+      handle_buttons();
+
+    screen_draw();
+  }
 }
