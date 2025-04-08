@@ -134,6 +134,7 @@ typedef struct PCData
   bool wifi_status;
   bool lte4_status;
   bool rfid_status;
+  bool usb_status;
   int sys_version;
   int backups;
   int envios;
@@ -262,6 +263,10 @@ bool parse_data(SafeString &msg)
 
   idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
+  g_system_data.usb_status = field.equals("1");
+
+  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
   if (!field.toInt(g_system_data.sys_version))
     return false;
 
@@ -319,18 +324,20 @@ const char fill_pattern[20] = "                   ";
 #define INFORM_SCREEN 0
 #define NETWRK_SCREEN 1
 #define NETCFG_SCREEN 2
-#define DATTME_SCREEN 3
-#define SYSTEM_SCREEN 4
-#define UPLOAD_SCREEN 5
-#define BACKUP_SCREEN 6
-#define DELETE_SCREEN 7
-#define SHTDWN_SCREEN 8
-#define NAV_SCREENS_COUNT 9
+#define USBCFG_SCREEN 3
+#define DATTME_SCREEN 4
+#define SYSTEM_SCREEN 5
+#define UPLOAD_SCREEN 6
+#define BACKUP_SCREEN 7
+#define DELETE_SCREEN 8
+#define SHTDWN_SCREEN 9
+#define NAV_SCREENS_COUNT 10
 
-#define OFFMSG_SCREEN 9
-#define CONFRM_SCREEN 10
-#define WAITNG_SCREEN 11
-#define SCREENS_COUNT 12
+#define OFFMSG_SCREEN 10
+#define CONFRM_SCREEN 11
+#define WAITNG_SCREEN 12
+#define SCREENS_COUNT 13
+
 unsigned int g_current_screen = 0;
 unsigned int g_confirm_target = 0; // target screen for events that need confirmation
 
@@ -342,6 +349,7 @@ const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
     "START:Reset tela   ",
     "                   ",
     "START:Reconectar   ",
+    "START:Salvar no USB",
     "                   ",
     "START:Atualizar    ",
     "START:Upload Regist",
@@ -378,6 +386,9 @@ void screen_build()
   case NETCFG_SCREEN:
     l1 = virt_scr_sprintf(0, 1, "Wi-Fi: %2s", g_system_data.wifi_status ? "OK" : "X");
     l2 = virt_scr_sprintf(0, 2, "LTE/4G: %2s", g_system_data.lte4_status ? "OK" : "X");
+    break;
+  case USBCFG_SCREEN:
+    l2 = virt_scr_sprintf(0, 2, "USB: %2s", g_system_data.usb_status ? "OK" : "X");
     break;
   case DATTME_SCREEN:
     l1 = virt_scr_sprintf(0, 1, "Data: %02d/%02d/%04d", g_system_data.day, g_system_data.month, g_system_data.year);
