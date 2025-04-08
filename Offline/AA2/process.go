@@ -94,7 +94,8 @@ func (a *Ay) Process() {
 		return
 	}
 
-	defer sender.Close()
+	// I AM DUMB AS FUCK
+	// defer sender.Close()
 
 	var device = usb.Device{}
 	device.Name = "/dev/sdb"
@@ -146,7 +147,7 @@ func (a *Ay) Process() {
 
 	// Envia os dados iniciais
 	pcData.Send(sender)
-	<-time.After(time.Second * 2)
+	<-time.After(time.Second * 3)
 
 	//NUM_EQUIP, err := strconv.Atoi(os.Getenv("MYTEMPO_DEVID"))
 
@@ -156,6 +157,7 @@ func (a *Ay) Process() {
 		ticker := time.NewTicker(120 * time.Millisecond)
 
 		defer ticker.Stop()
+		defer sender.Close()
 
 		for range ticker.C {
 
