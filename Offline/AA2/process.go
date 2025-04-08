@@ -39,6 +39,56 @@ func PopulateTagSet(tagSet *intSet.IntSet) {
 	}
 }
 
+func checkAction(actionString string, tagSet *intSet.IntSet, tags *atomic.Int64, antennas *[4]atomic.Int64) {
+
+	idx := strings.Index(actionString, "$")
+
+	if idx == -1 {
+		return
+	}
+
+	actionString = actionString[idx:]
+
+	if strings.HasPrefix(actionString, "$MYTMP;") {
+		actionString = strings.TrimPrefix(actionString, "$MYTMP;")
+		action, err := strconv.Atoi(strings.TrimSpace(actionString))
+
+		if err != nil {
+			return
+		}
+
+		switch action {
+		case INFO_ACTION:
+			tagSet.Clear()
+			tags.Store(0)
+			antennas[0].Store(0)
+			antennas[1].Store(0)
+			antennas[2].Store(0)
+			antennas[3].Store(0)
+		case NETWORK_ACTION:
+		case NETWORK_MGMT_ACTION:
+			ResetWifi()
+		case USBCFG_ACTION:
+			CreateUSBReport()
+		case DATETIME_ACTION:
+		case UPDATE_ACTION:
+			PCUpdate()
+		case UPLOAD_ACTION:
+			UploadData()
+		case UPLOAD_BACKUP_ACTION:
+			UploadBackup()
+		case ERASE_ACTION:
+			FullReset()
+		case SHUTDOWN_ACTION:
+			PCShutdown()
+		default:
+			return
+		}
+
+		select {}
+	}
+}
+
 func (a *Ay) Process() {
 
 	var (
@@ -177,48 +227,7 @@ func (a *Ay) Process() {
 			actionString, hasAction := sender.Recv()
 
 			if hasAction {
-				idx := strings.Index(actionString, "$")
-
-				if idx == -1 {
-					continue
-				}
-
-				actionString = actionString[idx:]
-
-				if strings.HasPrefix(actionString, "$MYTMP;") {
-					actionString = strings.TrimPrefix(actionString, "$MYTMP;")
-					action, err := strconv.Atoi(strings.TrimSpace(actionString))
-
-					if err != nil {
-						continue
-					}
-
-					switch action {
-					case INFO_ACTION:
-						tagSet.Clear()
-						tags.Store(0)
-						antennas[0].Store(0)
-						antennas[1].Store(0)
-						antennas[2].Store(0)
-						antennas[3].Store(0)
-					case NETWORK_ACTION:
-					case NETWORK_MGMT_ACTION:
-						ResetWifi()
-					case USBCFG_ACTION:
-						CreateUSBReport()
-					case DATETIME_ACTION:
-					case UPDATE_ACTION:
-						PCUpdate()
-					case UPLOAD_ACTION:
-						UploadData()
-					case UPLOAD_BACKUP_ACTION:
-						UploadBackup()
-					case ERASE_ACTION:
-						FullReset()
-					case SHUTDOWN_ACTION:
-						PCShutdown()
-					}
-				}
+				checkAction(actionString, &tagSet, &tags, &antennas)
 			}
 		}
 	}()
