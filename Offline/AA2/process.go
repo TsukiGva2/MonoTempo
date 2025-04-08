@@ -8,12 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"aa2/flick"
+	"aa2/constant"
 	"aa2/intSet"
-	"aa2/lcdlogger"
 	"aa2/pinger"
 	"aa2/usb"
 
+	com "github.com/TsukiGva2/comunica_serial"
 	probing "github.com/prometheus-community/pro-bing"
 )
 
@@ -86,22 +86,27 @@ func (a *Ay) Process() {
 		}
 	}()
 
+	// Inicializa o SerialSender com uma taxa de baud de 115200
+	sender, err := com.NewSerialSender(115200)
+
+	if err != nil {
+		log.Printf("Falha ao inicializar o SerialSender: %v", err)
+		return
+	}
+
+	defer sender.Close()
+
 	var device = usb.Device{}
 	device.Name = "/dev/sdb"
 	device.FS = usb.OSFileSystem{}
 
 	var readerIP = os.Getenv("READER_IP")
-	// var readerOctets = lcdlogger.IPIfy(readerIP)
 	var readerState atomic.Bool
-
-	//	var netPing atomic.Int64
 	var netState atomic.Bool
-
 	var lte4gState atomic.Bool
-	//var readerPing atomic.Int64
-
 	var Lte4gPinger *probing.Pinger
 
+	go pinger.NewJSONPinger(&netState)
 	ReaderPinger := pinger.NewPinger(readerIP, &readerState, nil)
 
 	go ReaderPinger.Run()
@@ -114,224 +119,58 @@ func (a *Ay) Process() {
 		}
 	}()
 
-	go pinger.NewJSONPinger(&netState)
-
-	display, displayErr := lcdlogger.NewSerialDisplay()
-
-	if displayErr != nil {
-
-		return
-	}
-
-	NUM_EQUIP, err := strconv.Atoi(os.Getenv("MYTEMPO_DEVID"))
+	sysver, err := strconv.Atoi(constant.VersionNum)
 
 	if err != nil {
-
-		return
+		sysver = 0
+		log.Printf("Falha ao converter a versão do sistema: %v, utilizando 0", err)
 	}
+
+	pcData := &com.PCData{}
+	pcData.Tags.Store(0)
+	pcData.UniqueTags.Store(0)
+	pcData.CommStatus.Store(false)
+	pcData.WifiStatus.Store(false)
+	pcData.Lte4Status.Store(false)
+	pcData.RfidStatus.Store(false)
+	pcData.SysVersion.Store(int32(sysver))
+
+	backupDirs, err := os.ReadDir("/var/monotempo/backup")
+
+	if err != nil {
+		log.Printf("Erro ao listar diretórios de backup: %v", err)
+		pcData.Backups.Store(0)
+	} else {
+		pcData.Backups.Store(int32(len(backupDirs)))
+	}
+
+	// Envia os dados iniciais
+	pcData.Send(sender)
+	<-time.After(time.Second * 2)
+
+	//NUM_EQUIP, err := strconv.Atoi(os.Getenv("MYTEMPO_DEVID"))
 
 	go func() {
 
-		for {
+		// Configura um ticker para enviar dados periodicamente
+		ticker := time.NewTicker(120 * time.Millisecond)
 
-			commVerif := flick.DESLIGAD
+		defer ticker.Stop()
 
-			switch display.Screen {
-			case lcdlogger.SCREEN_TAGS:
-				display.ScreenTags(
-					NUM_EQUIP,
-					commVerif,
-					/* Tags    */ lcdlogger.ToForthNumber(tags.Load()),
-					/* Atletas */ lcdlogger.ToForthNumber(tagSet.Count()),
-				)
-			case lcdlogger.SCREEN_ADDR:
+		for range ticker.C {
 
-				ok := flick.OK
+			usbOk, _ := device.Check()
 
-				if !readerState.Load() {
+			pcData.Tags.Store(tags.Load())
+			pcData.UniqueTags.Store(int32(tagSet.Count()))
 
-					ok = flick.DESLIGAD
-				}
+			pcData.RfidStatus.Store(readerState.Load())
+			pcData.Lte4Status.Store(lte4gState.Load())
+			pcData.WifiStatus.Store(netState.Load())
+			pcData.CommStatus.Store(netState.Load())
+			pcData.UsbStatus.Store(usbOk)
 
-				wiok := 9
-				if !netState.Load() {
-
-					wiok = 10
-				}
-
-				display.ScreenWifi(
-					NUM_EQUIP,
-					commVerif,
-					/* leitor OK? */ ok,
-					/* internet OK? */ wiok,
-					-1,
-				)
-			case lcdlogger.SCREEN_4G:
-
-				ok := flick.OK
-
-				if !readerState.Load() {
-
-					ok = flick.DESLIGAD
-				}
-
-				wiok := flick.OK
-				if !lte4gState.Load() {
-
-					wiok = flick.X
-				}
-
-				display.Screen4g(
-					NUM_EQUIP,
-					commVerif,
-					/* leitor OK? */ ok,
-					/* internet OK? */ wiok,
-					-1,
-				)
-			case lcdlogger.SCREEN_STAT:
-				display.ScreenStat(
-					NUM_EQUIP,
-					commVerif,
-					lcdlogger.ToForthNumber(antennas[0].Load()),
-					lcdlogger.ToForthNumber(antennas[1].Load()),
-					lcdlogger.ToForthNumber(antennas[2].Load()),
-					lcdlogger.ToForthNumber(antennas[3].Load()),
-				)
-			case lcdlogger.SCREEN_TIME:
-				display.ScreenTime(
-					NUM_EQUIP,
-					commVerif,
-				)
-			case lcdlogger.SCREEN_USB:
-				{
-					devCheck, err := device.Check()
-
-					if err != nil {
-
-						continue
-					}
-
-					devVerif := flick.X
-
-					if devCheck {
-
-						devVerif = flick.CONECTAD
-					}
-
-					display.ScreenUSB(
-						NUM_EQUIP,
-						commVerif,
-						devVerif,
-					)
-				}
-			case lcdlogger.SCREEN_INFO_EQUIP:
-				display.ScreenInfoEquip(NUM_EQUIP)
-			case lcdlogger.SCREEN_UPLOAD:
-				display.ScreenConfirmaUpload()
-			case lcdlogger.SCREEN_UPLOAD_BACKUP:
-				display.ScreenConfirmaUploadBackup()
-			case lcdlogger.SCREEN_TAG_RELATORIO:
-				display.ScreenTagRelatorio()
-			case lcdlogger.SCREEN_ATUALIZA:
-				display.ScreenAtualiza()
-			case lcdlogger.SCREEN_REFRESH:
-				display.ScreenRefresh()
-			}
-
-			display.SwitchScreens()
-
-			if action, hasAction := display.Action(); hasAction {
-
-				switch action {
-				case lcdlogger.ACTION_RESET:
-					display.ScreenConfirma()
-				case lcdlogger.ACTION_UPLOAD:
-					fallthrough
-				case lcdlogger.ACTION_UPLOAD_BACKUP:
-					display.ScreenUpload()
-				default:
-					display.ScreenProgress()
-				}
-
-				err = nil
-
-				switch action {
-				case lcdlogger.ACTION_UPLOAD:
-					UploadData()
-					select {}
-				case lcdlogger.ACTION_UPLOAD_BACKUP:
-					UploadBackup()
-					select {}
-					/*				case lcdlogger.ACTION_REBOOT:
-									PCReboot()
-									select {}
-					*/
-				case lcdlogger.ACTION_USB:
-					CopyToUSB()
-					select {}
-				case lcdlogger.ACTION_RELATORIO:
-					CreateUSBRelatorio()
-					select {}
-				case lcdlogger.ACTION_WIFI_RESET:
-					{
-						ResetWifi()
-					}
-				case lcdlogger.ACTION_REFRESH:
-					{
-						Refresh()
-						select {}
-					}
-				case lcdlogger.ACTION_4G_RESET:
-					{
-						Reset4g()
-						Lte4gPinger.Stop()
-					}
-				case lcdlogger.ACTION_RESET:
-					{
-						hasKey := display.WaitKeyPress(5 * time.Second)
-
-						if !hasKey { // timeout
-
-							continue
-						}
-
-						display.ScreenProgress()
-
-						ResetarTudo()
-						select {}
-					}
-				case lcdlogger.ACTION_TAGS:
-					{
-						for i := range 4 {
-							antennas[i].Store(0)
-						}
-
-						tags.Store(0)
-						tagSet.Clear()
-					}
-				case lcdlogger.ACTION_ATUALIZA:
-					{
-						AtualizarEquip()
-						select {}
-					}
-				default:
-					goto out // no action
-				}
-
-				<-time.After(1 * time.Second) // min 1 sec
-
-				if err != nil {
-
-					display.ScreenErr()
-
-					<-time.After(5 * time.Second)
-
-					continue
-				}
-			}
-		out:
-
-			time.Sleep(100 * time.Millisecond)
+			pcData.Send(sender)
 		}
 	}()
 }
