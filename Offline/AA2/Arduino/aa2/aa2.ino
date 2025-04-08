@@ -19,7 +19,7 @@
  * - SafeString.h: For safe string handling.
  * - SafeStringReader.h: For reading and parsing serial input.
  * - LiquidCrystal_I2C.h: For controlling the LCD screen.
- * - Standard C++ libraries: string.h, inttypes.h.
+ * - Standard C++ libraries: inttypes.h, time.h.
  *
  * @hardware
  * - 20x4 LCD screen with I2C interface.
@@ -37,6 +37,8 @@
  * - Functions:
  *   - check_clicked(): Checks if a button is clicked and returns the button ID.
  *   - parse_data(): Parses serial input to update system data.
+ *   - parse_time(): Parses and converts a timestamp to a human-readable date and time.
+ *   - check_sum(): Validates the checksum of a received serial message.
  *   - screen_build(): Builds the virtual screen content based on the current screen.
  *   - screen_draw(): Draws the virtual screen content on the LCD.
  *   - screen_lock(): Locks the screen for specific operations.
@@ -68,14 +70,22 @@
  * - Use the buttons to navigate between screens and trigger actions.
  * - Monitor the LCD for system statuses and prompts.
  * - Send data via serial communication in the expected format for updates.
+ *
+ * @changes
+ * - Added `parse_time()` function to handle timestamp parsing and conversion.
+ * - Added `check_sum()` function to validate the checksum of serial messages.
+ * - Updated `parse_data()` to include parsing of additional fields like timestamps.
+ * - Added `handle_serial()` to process serial input and update system state.
+ * - Added `handle_buttons()` to handle button inputs for navigation and actions.
+ * - Updated `screen_build()` to include new screens and data fields.
+ * - Added `screen_wait_confirm()` to handle confirmation waiting logic.
  */
 
 #include <SafeString.h>
 #include <SafeStringReader.h>
+#include <BufferedOutput.h>
 
 #include <time.h>
-
-#include <string.h>
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -154,6 +164,7 @@ PCData g_system_data;
 
 // create a SafeString reader to read the struct data
 createSafeStringReader(serial_reader, 80, '\n', true);
+createBufferedOutput(serial_writer, 12, BLOCK_IF_FULL, true);
 
 bool check_sum(SafeString &msg)
 {
@@ -517,9 +528,9 @@ void event_send()
   if (g_current_screen == CONFRM_SCREEN)
     g_current_screen = g_confirm_target;
 
-  Serial.write(START_DELIMITER);
-  Serial.write(g_current_screen);
-  Serial.write(END_DELIMITER);
+  char buf[11];
+  snprintf(buf, 11, "$MYTMP;%d", g_current_screen);
+  serial_writer.write((uint8_t*)buf, 10);
 
   screen_lock();
 }
@@ -568,6 +579,7 @@ void setup()
     ;
 
   serial_reader.connect(Serial); // where SafeStringReader will read from
+  serial_writer.connect(Serial); // where BufferedOutput will write to
 
   pinMode(BUTTON_START, INPUT_PULLUP);
   pinMode(BUTTON_VANCE, INPUT_PULLUP);

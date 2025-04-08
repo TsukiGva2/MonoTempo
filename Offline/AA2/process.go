@@ -171,6 +171,44 @@ func (a *Ay) Process() {
 			pcData.UsbStatus.Store(usbOk)
 
 			pcData.Send(sender)
+
+			actionString, hasAction := sender.Recv()
+			if hasAction {
+				if strings.HasPrefix(actionString, "$MYTMP;") {
+					actionString = strings.TrimPrefix(actionString, "$MYTMP;")
+					action, err := strconv.Atoi(strings.TrimSpace(actionString))
+
+					if err != nil {
+						continue
+					}
+
+					switch action {
+					case INFO_ACTION:
+						tagSet.Clear()
+						tags.Store(0)
+						antennas[0].Store(0)
+						antennas[1].Store(0)
+						antennas[2].Store(0)
+						antennas[3].Store(0)
+					case NETWORK_ACTION:
+					case NETWORK_MGMT_ACTION:
+						ResetWifi()
+					case USBCFG_ACTION:
+						CreateUSBReport()
+					case DATETIME_ACTION:
+					case UPDATE_ACTION:
+						PCUpdate()
+					case UPLOAD_ACTION:
+						UploadData()
+					case UPLOAD_BACKUP_ACTION:
+						UploadBackup()
+					case ERASE_ACTION:
+						FullReset()
+					case SHUTDOWN_ACTION:
+						PCShutdown()
+					}
+				}
+			}
 		}
 	}()
 }
