@@ -59,13 +59,10 @@ const (
 	SHUTDOWN_ACTION
 )
 
-// CMD hangs the screen until a restart issued by chancelor itself
 func CMD(s string) {
 	cmd := exec.Command("sh", "-c", fmt.Sprintf("echo '%s' > /var/monotempo-data/sig-upload-data", s))
 	err := cmd.Run()
 	log.Println(err)
-
-	select {}
 }
 
 func AUX(s string) {

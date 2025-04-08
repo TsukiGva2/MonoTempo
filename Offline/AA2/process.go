@@ -73,16 +73,22 @@ func checkAction(actionString string, tagSet *intSet.IntSet, tags *atomic.Int64,
 		// these actions hang
 		case USBCFG_ACTION:
 			CreateUSBReport()
+			select {}
 		case UPDATE_ACTION:
 			PCUpdate()
+			select {}
 		case UPLOAD_ACTION:
 			UploadData()
+			select {}
 		case UPLOAD_BACKUP_ACTION:
 			UploadBackup()
+			select {}
 		case ERASE_ACTION:
 			FullReset()
+			select {}
 		case SHUTDOWN_ACTION:
 			PCShutdown()
+			select {}
 		default:
 			return
 		}
