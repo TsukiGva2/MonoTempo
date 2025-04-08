@@ -175,7 +175,16 @@ func (a *Ay) Process() {
 			pcData.Send(sender)
 
 			actionString, hasAction := sender.Recv()
+
 			if hasAction {
+				idx := strings.Index(actionString, "$")
+
+				if idx == -1 {
+					continue
+				}
+
+				actionString = actionString[idx:]
+
 				if strings.HasPrefix(actionString, "$MYTMP;") {
 					actionString = strings.TrimPrefix(actionString, "$MYTMP;")
 					action, err := strconv.Atoi(strings.TrimSpace(actionString))
