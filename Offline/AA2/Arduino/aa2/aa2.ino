@@ -307,7 +307,6 @@ const char fill_pattern[20] = "                   ";
 | Info                    | - Regist.: (Tags)<br>- Atletas: (Unique-Tags)    | Displays the<br>tag count, and<br>unique tag count.                   | START: Reset visual tag data<br>information, does not<br>actually touch anything<br>stored. |
 | Network                 | - Comunicando: (Communication status)            | Displays the communication<br>with mytempo.esp.br                     |                                                                                             |
 | Network Mgmt            | - Wi-Fi: (WI-FI status)<br>- LTE/4G: (4G status) | Displays basic PC network<br>connectivity info.                       | START: Issue a reconnection<br>of both wifi and 4g networks.                                |
-| Reader info             | - Leitor: (Reader status)                        | Displays RFID reader<br>connectivity info.                            |                                                                                             |
 | System                  | - Version: (System version)                      | Displays the system version,<br>i.e. the current update.              | START: Fetch and Install the<br>latest version from github.                                 |
 | Upload                  | - Regist.: (Tags)<br>- Pendentes: (Envio count)  | Displays the current tag<br>count + the number of pending<br>uploads. | START: Upload all tag data<br>currently stored + pending<br>tag data.                       |
 | Upload (Backup)         | - Backups: (Backup count)                        | Displays the number of backups.                                       | START: Upload all backups.                                                                  |
@@ -320,19 +319,18 @@ const char fill_pattern[20] = "                   ";
 #define INFORM_SCREEN 0
 #define NETWRK_SCREEN 1
 #define NETCFG_SCREEN 2
-#define READER_SCREEN 3
-#define DATTME_SCREEN 4
-#define SYSTEM_SCREEN 5
-#define UPLOAD_SCREEN 6
-#define BACKUP_SCREEN 7
-#define DELETE_SCREEN 8
-#define SHTDWN_SCREEN 9
-#define NAV_SCREENS_COUNT 10
+#define DATTME_SCREEN 3
+#define SYSTEM_SCREEN 4
+#define UPLOAD_SCREEN 5
+#define BACKUP_SCREEN 6
+#define DELETE_SCREEN 7
+#define SHTDWN_SCREEN 8
+#define NAV_SCREENS_COUNT 9
 
-#define OFFMSG_SCREEN 10
-#define CONFRM_SCREEN 11
-#define WAITNG_SCREEN 12
-#define SCREENS_COUNT 13
+#define OFFMSG_SCREEN 9
+#define CONFRM_SCREEN 10
+#define WAITNG_SCREEN 11
+#define SCREENS_COUNT 12
 unsigned int g_current_screen = 0;
 unsigned int g_confirm_target = 0; // target screen for events that need confirmation
 
@@ -344,7 +342,6 @@ const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
     "START:Reset tela   ",
     "                   ",
     "START:Reconectar   ",
-    "                   ",
     "                   ",
     "START:Atualizar    ",
     "START:Upload Regist",
@@ -359,7 +356,7 @@ void screen_build()
 {
   unsigned int l1 = 0, l2 = 0;
 
-  if (g_current_screen < 6)
+  if (g_current_screen < UPLOAD_SCREEN)
   {
     virt_scr_sprintf(0, 0, "PORTAL my50x", 0);
   }
@@ -375,14 +372,12 @@ void screen_build()
                           g_system_data.unique_tags);
     break;
   case NETWRK_SCREEN:
+    l1 = virt_scr_sprintf(0, 1, "Leitor     : %2s", g_system_data.rfid_status ? "OK" : "X");
     l2 = virt_scr_sprintf(0, 2, "Comunicando: %3s", g_system_data.comm_status ? "SIM" : "NAO");
     break;
   case NETCFG_SCREEN:
     l1 = virt_scr_sprintf(0, 1, "Wi-Fi: %2s", g_system_data.wifi_status ? "OK" : "X");
     l2 = virt_scr_sprintf(0, 2, "LTE/4G: %2s", g_system_data.lte4_status ? "OK" : "X");
-    break;
-  case READER_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Leitor: %2s", g_system_data.rfid_status ? "OK" : "X");
     break;
   case DATTME_SCREEN:
     l1 = virt_scr_sprintf(0, 1, "Data: %02d/%02d/%04d", g_system_data.day, g_system_data.month, g_system_data.year);
@@ -520,21 +515,20 @@ void event_send()
 
 void handle_serial()
 {
-
   // serial_reader.skipToDelimiter();
-  if (serial_reader.read())
-  {
-    serial_reader.trim();
+  if (!serial_reader.read())
+    return;
 
-    if (!check_sum(serial_reader))
-      return;
+  serial_reader.trim();
 
-    if (serial_reader.startsWith("$MYTMP;"))
-    {
-      if (parse_data(serial_reader))
-        screen_unlock();
-    }
-  }
+  if (!check_sum(serial_reader))
+    return;
+
+  if (!serial_reader.startsWith("$MYTMP;"))
+    return;
+
+  if (parse_data(serial_reader))
+    screen_unlock();
 }
 
 void handle_buttons()
@@ -577,11 +571,12 @@ void loop()
   // blink without delay
   unsigned long ms = millis();
 
-  if (ms - previous_millis >= 5) {
+  if (ms - previous_millis >= 5)
+  {
     // if the screen is locked, skip the screen tasks
     // if the screen is waiting for confirmation, skip the screen tasks
     // if the screen is waiting for confirmation, skip the screen tasks
-  
+
     previous_millis = ms;
 
     if (g_locked)
@@ -590,7 +585,8 @@ void loop()
     if (g_screen_waiting_confirmation)
     {
       screen_wait_confirm();
-    } else
+    }
+    else
       handle_buttons();
 
     screen_draw();

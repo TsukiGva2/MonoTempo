@@ -48,7 +48,7 @@ func (a *Ay) StartConsumers() (channel *amqp.Channel, err error) {
 	return
 }
 
-func filhoDaPutaVaiSeFuderArrombado(e error) {
+func fatal(e error) {
 	cmd := exec.Command("sh", "-c", "echo 'fatal' > /var/monotempo-data/sig-upload-data")
 	err := cmd.Run()
 	log.Println(err, e)
@@ -67,19 +67,19 @@ func main() {
 		err := a.broker.Setup()
 
 		if err != nil {
-			filhoDaPutaVaiSeFuderArrombado(err)
+			fatal(err)
 		}
 
 		err = a.CreateBindings()
 
 		if err != nil {
-			filhoDaPutaVaiSeFuderArrombado(err)
+			fatal(err)
 		}
 
 		channel, err := a.StartConsumers()
 
 		if err != nil {
-			filhoDaPutaVaiSeFuderArrombado(err)
+			fatal(err)
 		}
 
 		go a.Process()
