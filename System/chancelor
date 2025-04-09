@@ -189,8 +189,9 @@ echo "Chancelor, Version 1.1.0"
 
 echo "Backing up leftover data (if any)"
 test -e "$DATABASE_DIR"/N0.db &&
-	mytempo_backup_to backup &&
-	mytempo_move_envio_to_backup
+	mytempo_backup_to backup
+
+mytempo_move_envio_to_backup
 
 VERSION_NUMBER_AA2=$(cd "$MYTEMPO_DATA" && git rev-list --count --all)
 export VERSION_NUMBER_AA2

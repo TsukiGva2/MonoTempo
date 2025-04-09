@@ -213,7 +213,7 @@ func (a *Ay) Process() {
 	pcData.WifiStatus.Store(false)
 	pcData.SysVersion.Store(int32(sysver))
 
-	backupDirs, err := countDir("/var/monotempo/backup")
+	backupDirs, err := countDir("/var/monotempo-data/backup")
 
 	if err != nil {
 		log.Printf("Erro ao listar diretórios de backup: %v", err)
