@@ -28,6 +28,9 @@ services:
       context: AA2
     depends_on:
       - rabbitmq
+    dns:
+      - 8.8.8.8
+      - 9.9.9.9
     env_file:
       - AA2/aa2.env
       - ../shared.env
