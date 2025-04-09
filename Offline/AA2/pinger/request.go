@@ -49,7 +49,7 @@ func JSONSimpleRequest(url string, data Form) (err error) {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Error connecting to '%s': got HTTP %d", url, res.StatusCode)
+		err = fmt.Errorf("error connecting to '%s': got HTTP %d", url, res.StatusCode)
 	}
 
 	return
@@ -68,7 +68,12 @@ func NewJSONPinger(state *atomic.Bool) {
 	for {
 		<-tick.C
 
+		log.Println("Sending JSON request to", infoRota)
+
 		err := JSONSimpleRequest(infoRota, data)
+
+		log.Println("Request terminated")
+
 		state.Store(err == nil)
 		log.Println(err)
 	}
