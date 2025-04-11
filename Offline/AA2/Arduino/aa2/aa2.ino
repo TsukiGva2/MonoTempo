@@ -85,6 +85,8 @@
 #include <SafeStringReader.h>
 #include <BufferedOutput.h>
 
+#include <avr/sleep.h>
+
 #include <time.h>
 
 #define __STDC_FORMAT_MACROS
@@ -98,29 +100,29 @@ bool g_clicked_start = false;
 
 int check_clicked()
 {
-  if (digitalRead(BUTTON_VANCE) == 0)
-  {
-    if (!g_clicked_vance)
-    {
-      g_clicked_vance = true;
-      return BUTTON_VANCE;
-    }
-  }
-  else
-    g_clicked_vance = false;
+	if (digitalRead(BUTTON_VANCE) == 0)
+	{
+		if (!g_clicked_vance)
+		{
+			g_clicked_vance = true;
+			return BUTTON_VANCE;
+		}
+	}
+	else
+		g_clicked_vance = false;
 
-  if (digitalRead(BUTTON_START) == 0)
-  {
-    if (!g_clicked_start)
-    {
-      g_clicked_start = true;
-      return BUTTON_START;
-    }
-  }
-  else
-    g_clicked_start = false;
+	if (digitalRead(BUTTON_START) == 0)
+	{
+		if (!g_clicked_start)
+		{
+			g_clicked_start = true;
+			return BUTTON_START;
+		}
+	}
+	else
+		g_clicked_start = false;
 
-  return 0;
+	return 0;
 }
 
 /*
@@ -138,24 +140,24 @@ int check_clicked()
 */
 typedef struct PCData
 {
-  int64_t tags;
-  int unique_tags;
-  bool comm_status;
-  bool wifi_status;
-  bool lte4_status;
-  bool rfid_status;
-  bool usb_status;
-  int sys_version;
-  int backups;
-  int permanent_unique_tags;
+	int64_t tags;
+	int unique_tags;
+	bool comm_status;
+	bool wifi_status;
+	bool lte4_status;
+	bool rfid_status;
+	bool usb_status;
+	int sys_version;
+	int backups;
+	int permanent_unique_tags;
 
-  // DateTime
-  int year;
-  int month;
-  int day;
-  int hour;
-  int minute;
-  int second;
+	// DateTime
+	int year;
+	int month;
+	int day;
+	int hour;
+	int minute;
+	int second;
 } PCData;
 
 constexpr size_t pc_data_size = sizeof(PCData);
@@ -168,135 +170,135 @@ createBufferedOutput(serial_writer, 12, BLOCK_IF_FULL, true);
 
 bool check_sum(SafeString &msg)
 {
-  int idx_star = msg.indexOf('*');
+	int idx_star = msg.indexOf('*');
 
-  cSF(check_sum_hex, 2);
+	cSF(check_sum_hex, 2);
 
-  msg.substring(check_sum_hex, idx_star + 1);
+	msg.substring(check_sum_hex, idx_star + 1);
 
-  long sum = 0;
+	long sum = 0;
 
-  if (!check_sum_hex.hexToLong(sum))
-  {
-    return false;
-  }
+	if (!check_sum_hex.hexToLong(sum))
+	{
+		return false;
+	}
 
-  for (size_t i = 1; i < idx_star; i++)
-  {
-    sum ^= msg[i];
-  }
+	for (size_t i = 1; i < idx_star; i++)
+	{
+		sum ^= msg[i];
+	}
 
-  return (sum == 0);
+	return (sum == 0);
 }
 
 bool parse_time(SafeString &timeField)
 {
-  int64_t stime = 0;
+	int64_t stime = 0;
 
-  if (!timeField.toInt64_t(stime))
-  {
-    return false;
-  }
+	if (!timeField.toInt64_t(stime))
+	{
+		return false;
+	}
 
-  if (stime < 0)
-  {
-    return false;
-  }
+	if (stime < 0)
+	{
+		return false;
+	}
 
-  if (stime > 2147483647)
-  {
-    return false;
-  }
+	if (stime > 2147483647)
+	{
+		return false;
+	}
 
-  if (stime < UNIX_OFFSET) // 2000-01-01 00:00:00
-  {
-    return false;
-  }
+	if (stime < UNIX_OFFSET) // 2000-01-01 00:00:00
+	{
+		return false;
+	}
 
-  stime -= UNIX_OFFSET;
+	stime -= UNIX_OFFSET;
 
-  time_t time = static_cast<time_t>(stime);
+	time_t time = static_cast<time_t>(stime);
 
-  struct tm *tm_ptr = gmtime(&time);
-  if (!tm_ptr)
-    return false;
+	struct tm *tm_ptr = gmtime(&time);
+	if (!tm_ptr)
+		return false;
 
-  g_system_data.year = tm_ptr->tm_year + 1900;
-  g_system_data.month = tm_ptr->tm_mon + 1;
-  g_system_data.day = tm_ptr->tm_mday;
-  g_system_data.hour = tm_ptr->tm_hour;
-  g_system_data.minute = tm_ptr->tm_min;
-  g_system_data.second = tm_ptr->tm_sec;
+	g_system_data.year = tm_ptr->tm_year + 1900;
+	g_system_data.month = tm_ptr->tm_mon + 1;
+	g_system_data.day = tm_ptr->tm_mday;
+	g_system_data.hour = tm_ptr->tm_hour;
+	g_system_data.minute = tm_ptr->tm_min;
+	g_system_data.second = tm_ptr->tm_sec;
 
-  return true;
+	return true;
 }
 
 bool parse_data(SafeString &msg)
 {
-  cSF(field, 11);
+	cSF(field, 11);
 
-  char delims[] = ";*";
-  bool returnEmptyFields = true;
+	char delims[] = ";*";
+	bool returnEmptyFields = true;
 
-  int idx = 0;
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	int idx = 0;
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (field != "$MYTMP")
-  {
-    return false;
-  }
+	if (field != "$MYTMP")
+	{
+		return false;
+	}
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (!field.toInt64_t(g_system_data.tags))
-    return false;
+	if (!field.toInt64_t(g_system_data.tags))
+		return false;
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (!field.toInt(g_system_data.unique_tags))
-    return false;
+	if (!field.toInt(g_system_data.unique_tags))
+		return false;
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  g_system_data.comm_status = field.equals("1");
+	g_system_data.comm_status = field.equals("1");
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  g_system_data.wifi_status = field.equals("1");
+	g_system_data.wifi_status = field.equals("1");
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  g_system_data.lte4_status = field.equals("1");
+	g_system_data.lte4_status = field.equals("1");
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  g_system_data.rfid_status = field.equals("1");
+	g_system_data.rfid_status = field.equals("1");
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  g_system_data.usb_status = field.equals("1");
+	g_system_data.usb_status = field.equals("1");
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (!field.toInt(g_system_data.sys_version))
-    return false;
+	if (!field.toInt(g_system_data.sys_version))
+		return false;
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (!field.toInt(g_system_data.backups))
-    return false;
+	if (!field.toInt(g_system_data.backups))
+		return false;
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (!field.toInt(g_system_data.permanent_unique_tags))
-    return false;
+	if (!field.toInt(g_system_data.permanent_unique_tags))
+		return false;
 
-  idx = msg.stoken(field, idx, delims, returnEmptyFields);
+	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-  if (!parse_time(field))
-    return false;
+	if (!parse_time(field))
+		return false;
 
-  return true;
+	return true;
 }
 
 /* SCREEN_H */
@@ -313,9 +315,9 @@ LiquidCrystal_I2C lcd(0x27, VIRT_SCR_COLS, VIRT_SCR_ROWS);
 const char fill_pattern[20] = "                   ";
 
 #define virt_scr_sprintf(x, y, fmt, ...) \
-  snprintf(g_virt_scr[y] + x, (VIRT_SCR_COLS - x), fmt, __VA_ARGS__);
+	snprintf(g_virt_scr[y] + x, (VIRT_SCR_COLS - x), fmt, __VA_ARGS__);
 #define virt_scr_fill_from(n, y) \
-  (n < 20 && snprintf(g_virt_scr[y] + n, (VIRT_SCR_COLS - n), fill_pattern + n));
+	(n < 20 && snprintf(g_virt_scr[y] + n, (VIRT_SCR_COLS - n), fill_pattern + n));
 
 /*
 | **Screen**              | **Content**                                      | **Description**                                                       | **Action (optional)**                                                                       |
@@ -347,10 +349,12 @@ const char fill_pattern[20] = "                   ";
 #define OFFMSG_SCREEN 10
 #define CONFRM_SCREEN 11
 #define WAITNG_SCREEN 12
-#define SCREENS_COUNT 13
+#define WAITON_SCREEN 13
+#define SCREENS_COUNT 14
 
 unsigned int g_current_screen = 0;
 unsigned int g_confirm_target = 0; // target screen for events that need confirmation
+unsigned int g_eta = 30;	   // countdown for shutdown message
 
 int g_unlocks;
 bool g_locked;
@@ -370,258 +374,300 @@ const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
     "START:Desligar     ",
     "                   ",
     "START:Confirma     ",
-    "                   "};
+    "                   ",
+    "                   ",
+};
 
 void screen_build()
 {
-  unsigned int l1 = 0, l2 = 0;
+	unsigned int l0 = 0, l1 = 0, l2 = 0;
 
-  if (g_current_screen < UPLOAD_SCREEN)
-  {
-    virt_scr_sprintf(0, 0, "PORTAL my50x", 0);
-  }
-  else
-    virt_scr_fill_from(0, 0);
+	switch (g_current_screen)
+	{
+	case INFORM_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Regist.: %" PRId32, g_system_data.tags);
+		l2 = virt_scr_sprintf(0, 2, "Atletas: %"
+					    "d",
+				      g_system_data.unique_tags);
+		break;
+	case NETWRK_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Leitor     : %2s", g_system_data.rfid_status ? "OK" : "X");
+		l2 = virt_scr_sprintf(0, 2, "Comunicando: %3s", g_system_data.comm_status ? "SIM" : "NAO");
+		break;
+	case NETCFG_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Wi-Fi: %2s", g_system_data.wifi_status ? "OK" : "X");
+		l2 = virt_scr_sprintf(0, 2, "LTE/4G: %2s", g_system_data.lte4_status ? "OK" : "X");
+		break;
+	case USBCFG_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "USB: %2s", g_system_data.usb_status ? "OK" : "X");
+		break;
+	case DATTME_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Data: %02d/%02d/%04d", g_system_data.day, g_system_data.month, g_system_data.year);
+		l2 = virt_scr_sprintf(0, 2, "Hora: %02d:%02d:%02d", g_system_data.hour, g_system_data.minute, g_system_data.second);
+		break;
+	case SYSTEM_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Versao: %"
+					    "d",
+				      g_system_data.sys_version);
+		break;
 
-  switch (g_current_screen)
-  {
-  case INFORM_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Regist.: %" PRId32, g_system_data.tags);
-    l2 = virt_scr_sprintf(0, 2, "Atletas: %"
-                                "d",
-                          g_system_data.unique_tags);
-    break;
-  case NETWRK_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Leitor     : %2s", g_system_data.rfid_status ? "OK" : "X");
-    l2 = virt_scr_sprintf(0, 2, "Comunicando: %3s", g_system_data.comm_status ? "SIM" : "NAO");
-    break;
-  case NETCFG_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Wi-Fi: %2s", g_system_data.wifi_status ? "OK" : "X");
-    l2 = virt_scr_sprintf(0, 2, "LTE/4G: %2s", g_system_data.lte4_status ? "OK" : "X");
-    break;
-  case USBCFG_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "USB: %2s", g_system_data.usb_status ? "OK" : "X");
-    break;
-  case DATTME_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Data: %02d/%02d/%04d", g_system_data.day, g_system_data.month, g_system_data.year);
-    l2 = virt_scr_sprintf(0, 2, "Hora: %02d:%02d:%02d", g_system_data.hour, g_system_data.minute, g_system_data.second);
-    break;
-  case SYSTEM_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Versao: %"
-                                "d",
-                          g_system_data.sys_version);
-    break;
-  case UPLOAD_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Atletas: %"
-                                "d",
-                          g_system_data.permanent_unique_tags);
-    // l2 = virt_scr_sprintf(0, 2, "Pendentes: %" "d", g_system_data.envios);
-    break;
-  case BACKUP_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Backups: %"
-                                "d",
-                          g_system_data.backups);
-    break;
-  case DELETE_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Apagar dados", NULL);
-    l2 = virt_scr_sprintf(0, 2, "do equipamento", NULL);
-    break;
-  case SHTDWN_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Desligar o", NULL);
-    l2 = virt_scr_sprintf(0, 2, "equipamento", NULL);
-    break;
+		/* down here are screens with no Heading, so they can use l0 */
 
-    /* end of NAV_SCREENS */
-    /* Extra screens */
+	case UPLOAD_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Atletas: %"
+					    "d",
+				      g_system_data.permanent_unique_tags);
+		// l2 = virt_scr_sprintf(0, 2, "Pendentes: %" "d", g_system_data.envios);
+		break;
+	case BACKUP_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Backups: %"
+					    "d",
+				      g_system_data.backups);
+		break;
+	case DELETE_SCREEN:
+		l0 = virt_scr_sprintf(0, 0, "Apagar dados", NULL);
+		l1 = virt_scr_sprintf(0, 1, "do equipamento", NULL);
+		break;
+	case SHTDWN_SCREEN:
+		l0 = virt_scr_sprintf(0, 0, "Desligar o", NULL);
+		l1 = virt_scr_sprintf(0, 1, "equipamento", NULL);
+		break;
 
-  case OFFMSG_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Aguarde 30 segundos", NULL);
-    l2 = virt_scr_sprintf(0, 2, "E pressione POWER", NULL);
-    break;
-  case CONFRM_SCREEN:
-    l1 = virt_scr_sprintf(0, 1, "Pressione START", NULL);
-    l2 = virt_scr_sprintf(0, 2, "para confirmar", NULL);
-    break;
-  case WAITNG_SCREEN:
-    l2 = virt_scr_sprintf(0, 2, "Aguarde...", NULL);
-    break;
-  }
+		/* end of NAV_SCREENS */
+		/* Extra screens */
 
-  virt_scr_fill_from(l1, 1);
-  virt_scr_fill_from(l2, 2);
+	case OFFMSG_SCREEN:
+		l1 = virt_scr_sprintf(0, 1, "Aguarde %d segundos", g_eta);
+		l2 = virt_scr_sprintf(0, 2, "E pressione POWER", NULL);
+		break;
+	case CONFRM_SCREEN:
+		l0 = virt_scr_sprintf(0, 0, "Pressione START", NULL);
+		l1 = virt_scr_sprintf(0, 1, "para confirmar", NULL);
+		break;
+	case WAITNG_SCREEN:
+		l2 = virt_scr_sprintf(0, 2, "Aguarde...", NULL);
+		break;
+	case WAITON_SCREEN:
+		l2 = virt_scr_sprintf(0, 2, "Aguardando MiniPC", NULL);
+		break;
+	}
 
-  virt_scr_sprintf(0, 3, "%s", desc[g_current_screen]);
+	if (g_current_screen < UPLOAD_SCREEN)
+	{
+		l0 = virt_scr_sprintf(0, 0, "PORTAL my50x", 0);
+	}
+
+	virt_scr_fill_from(l0, 0);
+	virt_scr_fill_from(l1, 1);
+	virt_scr_fill_from(l2, 2);
+
+	virt_scr_sprintf(0, 3, "%s", desc[g_current_screen]);
+}
+
+void screen_poweroff_countdown()
+{
+	g_current_screen = OFFMSG_SCREEN;
+
+	while (g_eta-- > 0)
+	{
+		screen_draw();
+		delay(1000);
+	}
+
+	// turn off the screen
+	lcd.noBacklight();
+	lcd.clear();
+
+	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+	sleep_enable();
+	sleep_cpu();
 }
 
 void screen_unlock()
 {
-  // we require three unlocks to unlock the screen
-  // this is to prevent accidental unlocks when the screen is locked
-  if (g_unlocks++ < 3)
-    return;
+	// we require three unlocks to unlock the screen
+	// this is to prevent accidental unlocks when the screen is locked
+	if (g_unlocks++ < 3)
+		return;
 
-  g_unlocks = 0; // reset the locks
+	g_unlocks = 0; // reset the locks
 
-  if (!g_locked)
-    return;
+	if (!g_locked)
+		return;
 
-  g_current_screen = 0;
-  g_locked = false;
+	g_current_screen = INFORM_SCREEN;
+	g_locked = false;
 }
 
 void screen_lock()
 {
-  g_current_screen = WAITNG_SCREEN;
-  g_locked = true;
+	if (g_current_screen == SHTDWN_SCREEN)
+	{
+		screen_poweroff_countdown();
+	}
 
-  serial_reader.flushInput();
+	g_current_screen = WAITNG_SCREEN;
+	g_locked = true;
+
+	serial_reader.flushInput();
+}
+
+void screen_lock(int screen)
+{
+	g_current_screen = screen;
+	g_locked = true;
+
+	serial_reader.flushInput();
 }
 
 void screen_next()
 {
-  g_current_screen = (g_current_screen + 1) % NAV_SCREENS_COUNT;
+	g_current_screen = (g_current_screen + 1) % NAV_SCREENS_COUNT;
 }
 
 void screen_confirm()
 {
-  g_screen_waiting_timestamp = millis();
-  g_screen_waiting_confirmation = true;
-  g_confirm_target = g_current_screen;
-  g_current_screen = CONFRM_SCREEN;
+	g_screen_waiting_timestamp = millis();
+	g_screen_waiting_confirmation = true;
+	g_confirm_target = g_current_screen;
+	g_current_screen = CONFRM_SCREEN;
 }
 
 void screen_wait_confirm()
 {
-  if (check_clicked())
-  {
-    g_screen_waiting_confirmation = false;
-    event_send();
-  }
+	if (check_clicked())
+	{
+		g_screen_waiting_confirmation = false;
+		event_send();
+	}
 
-  if (millis() - g_screen_waiting_timestamp > 2000)
-  {
-    g_screen_waiting_confirmation = false;
-    g_current_screen = g_confirm_target;
-  }
+	if (millis() - g_screen_waiting_timestamp > 2000)
+	{
+		g_screen_waiting_confirmation = false;
+		g_current_screen = g_confirm_target;
+	}
 }
 
 void screen_draw()
 {
-  screen_build();
+	screen_build();
 
-  for (int i = 0; i < VIRT_SCR_ROWS; i++)
-  {
-    lcd.setCursor(0, i);
-    for (char *c = g_virt_scr[i], i = 0; *c != '\0' && i < VIRT_SCR_COLS; c++, i++)
-      lcd.write(*c);
-  }
+	for (int i = 0; i < VIRT_SCR_ROWS; i++)
+	{
+		lcd.setCursor(0, i);
+		for (char *c = g_virt_scr[i], i = 0; *c != '\0' && i < VIRT_SCR_COLS; c++, i++)
+			lcd.write(*c);
+	}
 }
 
 void screen_init()
 {
-  lcd.init();      // Initialize the LCD
-  lcd.backlight(); // Turn on the backlight
-  memset(g_virt_scr, '\0', sizeof(g_virt_scr));
+	lcd.init();	 // Initialize the LCD
+	lcd.backlight(); // Turn on the backlight
+	memset(g_virt_scr, '\0', sizeof(g_virt_scr));
 }
 
 #define START_DELIMITER 0x3C
 #define END_DELIMITER 0x3E
 void event_send()
 {
-  // screens that need confirmation
-  if (g_current_screen == DELETE_SCREEN || g_current_screen == SHTDWN_SCREEN)
-  {
-    screen_confirm();
-    return;
-  }
+	// screens that need confirmation
+	if (g_current_screen == DELETE_SCREEN || g_current_screen == SHTDWN_SCREEN)
+	{
+		screen_confirm();
+		return;
+	}
 
-  if (g_current_screen == CONFRM_SCREEN)
-    g_current_screen = g_confirm_target;
+	if (g_current_screen == CONFRM_SCREEN)
+		g_current_screen = g_confirm_target;
 
-  char buf[11];
-  snprintf(buf, 11, "$MYTMP;%d", g_current_screen);
-  serial_writer.write((uint8_t*)buf, 10);
+	char buf[11];
+	snprintf(buf, 11, "$MYTMP;%d", g_current_screen);
+	serial_writer.write((uint8_t *)buf, 10);
 
-  screen_lock();
+	screen_lock();
 }
 
 void handle_serial()
 {
-  // serial_reader.skipToDelimiter();
-  if (!serial_reader.read())
-    return;
+	// serial_reader.skipToDelimiter();
+	if (!serial_reader.read())
+		return;
 
-  serial_reader.trim();
+	serial_reader.trim();
 
-  if (!check_sum(serial_reader))
-    return;
+	if (!check_sum(serial_reader))
+		return;
 
-  if (!serial_reader.startsWith("$MYTMP;"))
-    return;
+	if (!serial_reader.startsWith("$MYTMP;"))
+		return;
 
-  if (parse_data(serial_reader))
-    screen_unlock();
+	if (parse_data(serial_reader))
+		screen_unlock();
 }
 
 void handle_buttons()
 {
-  // LOCKED
-  if (g_locked)
-    return;
+	// LOCKED
+	if (g_locked)
+		return;
 
-  switch (check_clicked())
-  {
-  case BUTTON_VANCE:
-    screen_next();
-    break;
-  case BUTTON_START:
-    event_send();
-    break;
-  }
+	switch (check_clicked())
+	{
+	case BUTTON_VANCE:
+		screen_next();
+		break;
+	case BUTTON_START:
+		event_send();
+		break;
+	}
 }
 
 void setup()
 {
-  screen_init();
+	screen_init();
 
-  Serial.begin(115200);
-  while (!Serial)
-    ;
+	Serial.begin(115200);
+	while (!Serial)
+		;
 
-  serial_reader.connect(Serial); // where SafeStringReader will read from
-  serial_writer.connect(Serial); // where BufferedOutput will write to
+	serial_reader.connect(Serial); // where SafeStringReader will read from
+	serial_writer.connect(Serial); // where BufferedOutput will write to
 
-  pinMode(BUTTON_START, INPUT_PULLUP);
-  pinMode(BUTTON_VANCE, INPUT_PULLUP);
+	pinMode(BUTTON_START, INPUT_PULLUP);
+	pinMode(BUTTON_VANCE, INPUT_PULLUP);
+
+	screen_lock(WAITON_SCREEN);
+	screen_draw();
 }
 
 unsigned long previous_millis = 0;
 
 void loop()
 {
-  handle_serial();
+	handle_serial();
 
-  // blink without delay
-  unsigned long ms = millis();
+	// blink without delay
+	unsigned long ms = millis();
 
-  if (ms - previous_millis >= 5)
-  {
-    // if the screen is locked, skip the screen tasks
-    // if the screen is waiting for confirmation, skip the screen tasks
-    // if the screen is waiting for confirmation, skip the screen tasks
+	if (ms - previous_millis >= 5)
+	{
+		// if the screen is locked, skip the screen tasks
+		// if the screen is waiting for confirmation, skip the screen tasks
+		// if the screen is waiting for confirmation, skip the screen tasks
 
-    previous_millis = ms;
+		previous_millis = ms;
 
-    if (g_locked)
-      return;
+		if (g_locked)
+			return;
 
-    if (g_screen_waiting_confirmation)
-    {
-      screen_wait_confirm();
-    }
-    else
-      handle_buttons();
+		if (g_screen_waiting_confirmation)
+		{
+			screen_wait_confirm();
+		}
+		else
+			handle_buttons();
 
-    screen_draw();
-  }
+		screen_draw();
+	}
 }

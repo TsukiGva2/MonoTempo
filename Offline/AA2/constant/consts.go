@@ -12,7 +12,3 @@ var (
 	ReaderPath         = os.Getenv("READER_PATH")
 	VersionNum         = os.Getenv("VERSION_NUMBER_AA2")
 )
-
-const (
-	FORTH_BTN_PRESSED = "bac @ ba2 @ OR ."
-)
