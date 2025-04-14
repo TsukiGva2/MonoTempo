@@ -8,7 +8,7 @@ import (
 var (
 	ProgramTimezone, _ = time.LoadLocation("Brazil/East")
 	Reader             = os.Getenv("READER_NAME")
-	Serie              = 501
+	DeviceId           = os.Getenv("MYTEMPO_DEVID")
 	ReaderPath         = os.Getenv("READER_PATH")
 	VersionNum         = os.Getenv("VERSION_NUMBER_AA2")
 )

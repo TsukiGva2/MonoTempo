@@ -222,18 +222,12 @@ func (a *Ay) Process() {
 		pcData.Backups = backupDirs
 	}
 
-	hostname, err := os.Hostname()
+	deviceId, err := strconv.Atoi(constant.DeviceId)
 	if err != nil {
-		log.Printf("Erro ao obter o hostname: %v", err)
+		log.Printf("Erro ao converter o hostname para número: %v", err)
 		pcData.SysCodeName = 500
 	} else {
-		hostnameNumber, err := strconv.Atoi(strings.TrimPrefix(hostname, "my"))
-		if err != nil {
-			log.Printf("Erro ao converter o hostname para número: %v", err)
-			pcData.SysCodeName = 500
-		} else {
-			pcData.SysCodeName = hostnameNumber
-		}
+		pcData.SysCodeName = deviceId
 	}
 
 	// Envia os dados iniciais
