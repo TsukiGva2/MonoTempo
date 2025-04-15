@@ -120,6 +120,8 @@ mytempo_usb_save() {
 
 mytempo_usb_save_stats() {
 
+	mytempo_usb_save
+
 	rm -f /tmp/dump*
 
 	mount /dev/sdb1 /mnt &&
@@ -224,7 +226,6 @@ while true; do
 	"stats") mytempo_usb_save_stats ;;
 	"backup") mytempo_upload_backup ;;
 	"normal") mytempo_upload_normal ;;
-	"save") mytempo_usb_save ;;
 	"reset") mytempo_clean ;;
 	"reboot") reboot ;;
 	esac
