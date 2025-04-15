@@ -168,7 +168,7 @@ func (a *Ay) Process() {
 	}()
 
 	// Inicializa o SerialSender com uma taxa de baud de 115200
-	sender, err := com.NewSerialSender(115200, "")
+	sender, err := com.NewSerialSender(115200, constant.SerialPortOverride)
 
 	if err != nil {
 		log.Printf("Falha ao inicializar o SerialSender: %v", err)
