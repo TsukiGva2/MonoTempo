@@ -10,7 +10,6 @@ import (
 
 	"aa2/constant"
 	"aa2/intSet"
-	"aa2/netcheck"
 	"aa2/pinger"
 	"aa2/usb"
 
@@ -201,7 +200,6 @@ func (a *Ay) Process() {
 	pcData.Tags.Store(0)
 	pcData.UniqueTags.Store(0)
 
-	pcData.WifiStatus.Store(false)
 	pcData.SysVersion = sysver
 
 	backupDirs, err := countDir("/var/monotempo-data/backup")
@@ -241,26 +239,6 @@ func (a *Ay) Process() {
 
 			pcData.UniqueTags.Store(int32(tagSet.Count()))
 			pcData.PermanentUniqueTags.Store(int32(permanentTagSet.Count()))
-
-			if constant.WifiIface != "" {
-				hasConn, err := netcheck.CheckIface(constant.WifiIface)
-
-				if err == nil {
-					pcData.WifiStatus.Store(hasConn)
-				} else {
-					log.Printf("Erro ao verificar a interface '%s': %v", constant.WifiIface, err)
-				}
-			}
-
-			if constant.Lte4GIface != "" {
-				hasConn, err := netcheck.CheckIface(constant.Lte4GIface)
-
-				if err == nil {
-					pcData.Lte4Status.Store(hasConn)
-				} else {
-					log.Printf("Erro ao verificar a interface '%s': %v", constant.Lte4GIface, err)
-				}
-			}
 
 			pcData.UsbStatus.Store(usbOk)
 

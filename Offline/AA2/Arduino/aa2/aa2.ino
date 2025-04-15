@@ -143,8 +143,6 @@ typedef struct PCData
 	int64_t tags;
 	int unique_tags;
 	bool comm_status;
-	bool wifi_status;
-	bool lte4_status;
 	bool rfid_status;
 	bool usb_status;
 	int sys_version;
@@ -262,14 +260,6 @@ bool parse_data(SafeString &msg)
 	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
 	g_system_data.comm_status = field.equals("1");
-
-	idx = msg.stoken(field, idx, delims, returnEmptyFields);
-
-	g_system_data.wifi_status = field.equals("1");
-
-	idx = msg.stoken(field, idx, delims, returnEmptyFields);
-
-	g_system_data.lte4_status = field.equals("1");
 
 	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
@@ -401,8 +391,8 @@ void screen_build()
 		l2 = virt_scr_sprintf(0, 2, "Comunicando: %3s", g_system_data.comm_status ? "SIM" : "NAO");
 		break;
 	case NETCFG_SCREEN:
-		l1 = virt_scr_sprintf(0, 1, "Wi-Fi: %2s", g_system_data.wifi_status ? "OK" : "X");
-		l2 = virt_scr_sprintf(0, 2, "LTE/4G: %2s", g_system_data.lte4_status ? "OK" : "X");
+		l1 = virt_scr_sprintf(0, 1, "Reconectar a rede", NULL);
+		l2 = virt_scr_sprintf(0, 2, "Wi-Fi ou 4G", NULL);
 		break;
 	case USBCFG_SCREEN:
 		l1 = virt_scr_sprintf(0, 1, "USB: %2s", g_system_data.usb_status ? "OK" : "X");
