@@ -126,8 +126,8 @@ const (
 )
 
 // function for the state transition, it goes: 0, 0, 0, 1, 2, 0 ...
-func statePattern(state int) int {
-	r := state % 5
+func transitionStep(c int) int {
+	r := c % 5
 
 	if r < 3 {
 		return 0
@@ -248,6 +248,9 @@ func (a *Ay) Process() {
 		sendTicker := time.NewTicker(120 * time.Millisecond)
 		state := STATE_TAG_REPORT
 
+		// step counter for state transitions
+		c := 0
+
 		for range sendTicker.C {
 
 			pcData.UniqueTags.Store(int32(tagSet.Count()))
@@ -274,7 +277,8 @@ func (a *Ay) Process() {
 
 			select {
 			case <-switcherTicker.C:
-				state = statePattern(state)
+				c += 1 // step
+				state = transitionStep(c)
 			default:
 			}
 		}
