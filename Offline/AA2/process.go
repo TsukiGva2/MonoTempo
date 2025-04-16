@@ -119,6 +119,20 @@ func checkAction(actionString string, tagSet *intSet.IntSet, tags *atomic.Int64,
 	}
 }
 
+// Helper to get the earliest of 3 times
+func minTime(a, b, c time.Time) time.Time {
+	if a.Before(b) {
+		if a.Before(c) {
+			return a
+		}
+		return c
+	}
+	if b.Before(c) {
+		return b
+	}
+	return c
+}
+
 func (a *Ay) Process() {
 
 	var (
@@ -227,17 +241,27 @@ func (a *Ay) Process() {
 
 	go func() {
 
-		doPCDataReport := time.NewTicker(1 * time.Second)
-		doTagReport := time.NewTicker(120 * time.Millisecond)
-
-		<-doPCDataReport.C
-		doAntennaReport := time.NewTicker(1 * time.Second)
+		// Set initial times
+		nextTag := time.Now().Add(120 * time.Millisecond)
+		nextAntenna := time.Now().Add(1 * time.Second)
+		nextPC := time.Now().Add(2 * time.Second)
 
 		for {
+			now := time.Now()
+
+			// Determine which event is due next
+			nextEvent := minTime(nextTag, nextAntenna, nextPC)
+
+			sleepDuration := time.Until(nextEvent)
+
+			if sleepDuration > 0 {
+				time.Sleep(sleepDuration)
+				now = time.Now()
+			}
+
 			pcData.UniqueTags.Store(int32(tagSet.Count()))
 
-			select {
-			case <-doPCDataReport.C:
+			if !now.Before(nextPC) {
 				pcData.PermanentUniqueTags.Store(int32(permanentTagSet.Count()))
 
 				usbOk, _ := device.Check()
@@ -245,11 +269,20 @@ func (a *Ay) Process() {
 
 				pcData.SendPCDataReport(sender)
 
-			case <-doAntennaReport.C:
+				nextPC = nextPC.Add(2 * time.Second)
+				nextAntenna = nextAntenna.Add(1 * time.Second)
+				nextTag = now.Add(120 * time.Millisecond)
+
+			} else if !now.Before(nextAntenna) {
 				pcData.SendAntennaReport(sender)
 
-			case <-doTagReport.C:
+				nextAntenna = nextAntenna.Add(1 * time.Second)
+				nextTag = now.Add(120 * time.Millisecond)
+
+			} else if !now.Before(nextTag) {
 				pcData.SendTagReport(sender)
+
+				nextTag = nextTag.Add(120 * time.Millisecond)
 			}
 
 			actionString, hasAction := sender.Recv()
