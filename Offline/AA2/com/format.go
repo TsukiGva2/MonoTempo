@@ -64,8 +64,14 @@ func withChecksum(data string) string {
 	return fmt.Sprintf("$%s*%02X", data, checksum)
 }
 
+func epoch() int64 {
+	unix := time.Now().Unix()
+	_, offset := time.Now().Zone()
+	return unix - int64(offset)
+}
+
 func (pd *PCData) formatPCDataReport() string {
-	currentEpoch := time.Now().Unix()
+	currentEpoch := epoch()
 
 	f := fmt.Sprintf("MYTMP;%d;%d;P;%d;%d;%d;%d;%d;%d;%d;%d",
 		pd.Tags.Load(), pd.UniqueTags.Load(), boolToInt(pd.CommStatus.Load()),
@@ -77,7 +83,7 @@ func (pd *PCData) formatPCDataReport() string {
 }
 
 func (pd *PCData) formatAntennaReport() string {
-	currentEpoch := time.Now().Unix()
+	currentEpoch := epoch()
 
 	f := fmt.Sprintf("MYTMP;%d;%d;A;%d;%d;%d;%d;%d",
 		pd.Tags.Load(), pd.UniqueTags.Load(), pd.Antennas[0].Load(),
@@ -87,7 +93,7 @@ func (pd *PCData) formatAntennaReport() string {
 }
 
 func (pd *PCData) formatTagReport() string {
-	currentEpoch := time.Now().Unix()
+	currentEpoch := epoch()
 
 	f := fmt.Sprintf("MYTMP;%d;%d;T;%d",
 		pd.Tags.Load(), pd.UniqueTags.Load(), currentEpoch)
