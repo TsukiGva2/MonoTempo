@@ -172,6 +172,9 @@ typedef struct PCData
 
 PCData g_system_data;
 
+// wether or not the antenna reports are enabled
+bool g_does_antenna_reports = false;
+
 // create a SafeString reader to read the struct data
 createSafeStringReader(serial_reader, 120, '\n', true);
 createBufferedOutput(serial_writer, 12, BLOCK_IF_FULL, true);
@@ -406,9 +409,6 @@ const char fill_pattern[20] = "                   ";
 unsigned int g_current_screen = 0;
 unsigned int g_confirm_target = 0; // target screen for events that need confirmation
 unsigned int g_eta = 30;	   // countdown for shutdown message
-
-// wether or not the antenna reports are enabled
-bool g_does_antenna_reports = false;
 
 int g_unlocks;
 bool g_locked;
