@@ -228,30 +228,36 @@ func (a *Ay) Process() {
 		// Configura um ticker para enviar dados periodicamente
 		ticker := time.NewTicker(150 * time.Millisecond)
 		antennaTicker := time.NewTicker(300 * time.Millisecond)
+		usbCheck := time.NewTicker(1 * time.Second)
 
 		defer ticker.Stop()
 		defer sender.Close()
 
-		for range ticker.C {
+		var usbOk bool = false
 
-			usbOk, _ := device.Check()
-
-			pcData.UniqueTags.Store(int32(tagSet.Count()))
-			pcData.PermanentUniqueTags.Store(int32(permanentTagSet.Count()))
-
-			pcData.UsbStatus.Store(usbOk)
-
-			pcData.Send(sender)
+		for {
 			select {
-			case <-antennaTicker.C:
-				pcData.SendAntennaReport(sender)
+			case <-usbCheck.C:
+				usbOk, _ = device.Check()
 			default:
 			}
 
-			actionString, hasAction := sender.Recv()
+			select {
+			case <-antennaTicker.C:
+				pcData.SendAntennaReport(sender)
+			case <-ticker.C:
+				pcData.UniqueTags.Store(int32(tagSet.Count()))
+				pcData.PermanentUniqueTags.Store(int32(permanentTagSet.Count()))
 
-			if hasAction {
-				checkAction(actionString, &tagSet, &pcData.Tags, &pcData.Antennas)
+				pcData.UsbStatus.Store(usbOk)
+
+				pcData.Send(sender)
+
+				actionString, hasAction := sender.Recv()
+
+				if hasAction {
+					checkAction(actionString, &tagSet, &pcData.Tags, &pcData.Antennas)
+				}
 			}
 		}
 	}()
