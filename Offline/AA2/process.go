@@ -126,9 +126,9 @@ const (
 	STATE_PC_DATA_REPORT
 )
 
-// function for the state transition, it goes: 0, 0, 0, 1, 1, 2, 0 ...
+// function for the state transition, it goes: 0, 0, 0, 1, 1, 2, 2 ...
 func transitionStep(c int) int {
-	return (c % 5) / 2
+	return (c % 6) / 2
 }
 
 func (a *Ay) Process() {
@@ -239,7 +239,7 @@ func (a *Ay) Process() {
 
 	go func() {
 
-		switcherTicker := time.NewTicker(1 * time.Second)
+		switcherTicker := time.NewTicker(400 * time.Millisecond)
 		sendTicker := time.NewTicker(120 * time.Millisecond)
 		state := STATE_TAG_REPORT
 
