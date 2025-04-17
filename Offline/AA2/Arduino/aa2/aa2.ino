@@ -189,8 +189,11 @@ bool g_does_antenna_reports = false;
 
 // create a SafeString reader to read the struct data
 createSafeStringReader(serial_reader, 120, '\n', true);
+
+// create a BufferedOutput to write screen data out
 createBufferedOutput(serial_writer, 12, BLOCK_IF_FULL, true);
 
+// Perform basic XOR checksum8 to input, excluding the starting '$' sign.
 bool check_sum(SafeString &msg)
 {
 	int idx_star = msg.indexOf('*');
@@ -215,6 +218,8 @@ bool check_sum(SafeString &msg)
 	return (sum == 0);
 }
 
+// Parses a UNIX timestamp and correctly offsets it to arduino's standards
+// (arduino starts at 2000-01-01 rather than 1970)
 bool parse_time(SafeString &timeField)
 {
 	int64_t stime = 0;
@@ -275,6 +280,76 @@ int32_t getInt32Field(SafeString &field)
 	return value;
 }
 
+/*
+## Serial Communication Input Format
+
+The program now supports two types of serial messages: Antenna Data (A) and PCData (P). The format is as follows:
+
+```perl
+$MYTMP;<tags>;<unique_tags>;<type>;<data>;<timestamp>*<checksum>
+```
+
+### Field Descriptions
+
+- `<tags>`: Total number of tags read (integer).
+- `<unique_tags>`: Number of unique tags read (integer).
+- `<type>`: Message type (`A` for Antenna Data, `P` for PCData).
+- `<data>`: Data fields specific to the message type (see below).
+- `<timestamp>`: The UNIX timestamp for updating time.
+- `<checksum>`: XOR checksum of the message (excluding the `$`).
+
+#### Antenna's `<data>` Fields (`A`)
+
+- `<antenna1>`: Count of tags read by antenna 1 (integer).
+- `<antenna2>`: Count of tags read by antenna 2 (integer).
+- `<antenna3>`: Count of tags read by antenna 3 (integer).
+- `<antenna4>`: Count of tags read by antenna 4 (integer).
+
+#### PCData's `<data>` Fields (`P`)
+
+- `<comm_status>`: Communication status (`1` for true, `0` for false).
+- `<rfid_status>`: RFID reader status (`1` for true, `0` for false).
+- `<usb_status>`: USB connection status (`1` for true, `0` for false).
+- `<sys_version>`: System version number (integer).
+- `<num_serie>`: Serial number of the system (integer).
+- `<backups>`: Number of backups stored (integer).
+- `<permanent_unique_tags>`: Number of permanent unique tags (integer).
+
+### Examples
+
+#### Antenna Data Example
+
+```perl
+$MYTMP;12345;678;A;100;200;300;400;1744846380*<checksum>
+```
+
+- `<tags>`: 12345
+- `<unique_tags>`: 678
+- `<type>`: `A` (Antenna Data)
+- `<antenna1>`: 100
+- `<antenna2>`: 200
+- `<antenna3>`: 300
+- `<antenna4>`: 400
+- `<timestamp>`: 1744846380 (Wed, 16 Apr 2025 23:33:00 GMT)
+
+#### PCData Example
+
+```perl
+$MYTMP;12345;678;P;1;1;0;42;123;5;100;1744846380*<checksum>
+```
+
+- `<tags>`: 12345
+- `<unique_tags>`: 678
+- `<type>`: `P` (PCData)
+- `<comm_status>`: 1 (true)
+- `<rfid_status>`: 1 (true)
+- `<usb_status>`: 0 (false)
+- `<sys_version>`: 42
+- `<num_serie>`: 123
+- `<backups>`: 5
+- `<permanent_unique_tags>`100
+- `<timestamp>`: 1744846380 (Wed, 16 Apr 2025 23:33:00 GMT)
+*/
 bool parse_pc_data(SafeString &msg)
 {
 	cSF(field, 11);
