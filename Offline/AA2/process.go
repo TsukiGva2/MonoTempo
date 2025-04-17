@@ -257,7 +257,7 @@ func (a *Ay) Process() {
 
 			switch state {
 			case STATE_TAG_REPORT:
-				pcData.SendTagReport(sender)
+				pcData.SendPCDataReport(sender)
 			case STATE_ANTENNA_REPORT:
 				if constant.ReaderType == "impinj" {
 					pcData.SendAntennaReport(sender)
