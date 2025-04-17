@@ -263,21 +263,22 @@ bool parse_time(SafeString &timeField)
 }
 
 // XXX: gets an int64_t and casts it to a int32_t
-// returns 0 if the value is out of range
-int32_t getInt32Field(SafeString &field)
+// the result is stored in &dest only if the conversion succeeds.
+// @param field The field to convert
+// @return true if the conversion was successful, false otherwise
+bool getInt32Field(SafeString &field, int32_t &dest)
 {
-	int32_t value = 0;
-	int64_t value64 = 0;
+	int64_t value = 0;
 
-	if (!field.toInt64_t(value64))
-		return 0;
+	if (!field.toInt64_t(value))
+		return false;
 
-	if (value64 < INT32_MIN || value64 > INT32_MAX)
-		return 0;
+	if (value <= INT32_MIN || value >= INT32_MAX)
+		return false;
 
-	value = static_cast<int32_t>(value64);
+	dest = static_cast<int32_t>(value);
 
-	return value;
+	return true;
 }
 
 /*
@@ -368,7 +369,8 @@ bool parse_pc_data(SafeString &msg)
 
 	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-	g_system_data.tag_data.tags = getInt32Field(field);
+	if (!getInt32Field(field, g_system_data.tag_data.tags))
+		return false;
 
 	idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
@@ -385,19 +387,23 @@ bool parse_pc_data(SafeString &msg)
 
 		idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-		g_system_data.tag_data.antenna1 = getInt32Field(field);
+		if (!getInt32Field(field, g_system_data.tag_data.antenna1))
+			return false;
 
 		idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-		g_system_data.tag_data.antenna2 = getInt32Field(field);
+		if (!getInt32Field(field, g_system_data.tag_data.antenna2))
+			return false;
 
 		idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-		g_system_data.tag_data.antenna3 = getInt32Field(field);
+		if (!getInt32Field(field, g_system_data.tag_data.antenna3))
+			return false;
 
 		idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-		g_system_data.tag_data.antenna4 = getInt32Field(field);
+		if (!getInt32Field(field, g_system_data.tag_data.antenna4))
+			return false;
 	} // do PCData update
 	else if (field.equals("P"))
 	{
