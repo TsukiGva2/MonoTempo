@@ -670,7 +670,7 @@ void event_send(void)
 	serial_writer.write((uint8_t *)buf, 10);
 
 	// filter out screens which have non-blocking actions or no action at all
-	if (g_current_screen > ANTNNA_SCREEN && g_current_screen != DATTME_SCREEN)
+	if (g_current_screen > NETWRK_SCREEN && g_current_screen != DATTME_SCREEN)
 		screen_lock();
 }
 
