@@ -110,7 +110,7 @@
 bool g_clicked_vance = false;
 bool g_clicked_start = false;
 
-int check_clicked()
+int check_clicked(void)
 {
 	if (digitalRead(BUTTON_VANCE) == 0)
 	{
@@ -446,7 +446,7 @@ const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
     "                   ",
 };
 
-void screen_build()
+void screen_build(void)
 {
 	unsigned int l0 = 0, l1 = 0, l2 = 0;
 
@@ -539,7 +539,7 @@ void screen_build()
 	virt_scr_sprintf(0, 3, "%s", desc[g_current_screen]);
 }
 
-void screen_poweroff_countdown()
+void screen_poweroff_countdown(void)
 {
 	g_current_screen = OFFMSG_SCREEN;
 
@@ -558,7 +558,7 @@ void screen_poweroff_countdown()
 	sleep_cpu();
 }
 
-void screen_unlock()
+void screen_unlock(void)
 {
 	// we require three unlocks to unlock the screen
 	// this is to prevent accidental unlocks when the screen is locked
@@ -574,7 +574,9 @@ void screen_unlock()
 	g_locked = false;
 }
 
-void screen_lock()
+// Set screen to WAITNG_SCREEN, lock navigation.
+// A successful Serial receive triggers an unlock.
+void screen_lock(void)
 {
 	if (g_current_screen == SHTDWN_SCREEN)
 	{
@@ -587,6 +589,9 @@ void screen_lock()
 	serial_reader.flushInput();
 }
 
+// Set screen to WAITNG_SCREEN, lock navigation.
+// A successful Serial receive triggers an unlock.
+// @param screen The screen to lock to.
 void screen_lock(int screen)
 {
 	g_current_screen = screen;
@@ -595,7 +600,7 @@ void screen_lock(int screen)
 	serial_reader.flushInput();
 }
 
-void screen_next()
+void screen_next(void)
 {
 	g_current_screen = (g_current_screen + 1) % NAV_SCREENS_COUNT;
 
@@ -606,7 +611,7 @@ void screen_next()
 	}
 }
 
-void screen_confirm()
+void screen_confirm(void)
 {
 	g_screen_waiting_timestamp = millis();
 	g_screen_waiting_confirmation = true;
@@ -614,7 +619,7 @@ void screen_confirm()
 	g_current_screen = CONFRM_SCREEN;
 }
 
-void screen_wait_confirm()
+void screen_wait_confirm(void)
 {
 	if (check_clicked())
 	{
@@ -629,7 +634,7 @@ void screen_wait_confirm()
 	}
 }
 
-void screen_draw()
+void screen_draw(void)
 {
 	screen_build();
 
@@ -641,14 +646,14 @@ void screen_draw()
 	}
 }
 
-void screen_init()
+void screen_init(void)
 {
 	lcd.init();	 // Initialize the LCD
 	lcd.backlight(); // Turn on the backlight
 	memset(g_virt_scr, '\0', sizeof(g_virt_scr));
 }
 
-void event_send()
+void event_send(void)
 {
 	// screens that need confirmation
 	if (g_current_screen == DELETE_SCREEN || g_current_screen == SHTDWN_SCREEN)
@@ -664,10 +669,12 @@ void event_send()
 	snprintf(buf, 11, "$MYTMP;%d", g_current_screen);
 	serial_writer.write((uint8_t *)buf, 10);
 
-	screen_lock();
+	// filter out screens which have non-blocking actions or no action at all
+	if (g_current_screen > ANTNNA_SCREEN && g_current_screen != DATTME_SCREEN)
+		screen_lock();
 }
 
-void handle_serial()
+void handle_serial(void)
 {
 	// serial_reader.skipToDelimiter();
 	if (!serial_reader.read())
@@ -685,7 +692,7 @@ void handle_serial()
 		screen_unlock();
 }
 
-void handle_buttons()
+void handle_buttons(void)
 {
 	// LOCKED
 	if (g_locked)
@@ -702,7 +709,7 @@ void handle_buttons()
 	}
 }
 
-void setup()
+void setup(void)
 {
 	screen_init();
 
@@ -722,7 +729,7 @@ void setup()
 
 unsigned long previous_millis = 0;
 
-void loop()
+void loop(void)
 {
 	handle_serial();
 

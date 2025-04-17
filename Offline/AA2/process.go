@@ -61,7 +61,7 @@ func populateTagSet(tagSet *intSet.IntSet, permanentSet *intSet.IntSet) {
 	}
 }
 
-func checkAction(actionString string, tagSet *intSet.IntSet, tags *atomic.Int64, antennas *[4]atomic.Int64) {
+func checkAction(actionString string, state *int, tagSet *intSet.IntSet, tags *atomic.Int64, antennas *[4]atomic.Int64) {
 
 	idx := strings.Index(actionString, "$")
 
@@ -87,9 +87,12 @@ func checkAction(actionString string, tagSet *intSet.IntSet, tags *atomic.Int64,
 			antennas[1].Store(0)
 			antennas[2].Store(0)
 			antennas[3].Store(0)
+		case ANTENNA_ACTION:
+			*state = STATE_ANTENNA_REPORT
 		case NETWORK_ACTION:
 		case NETWORK_MGMT_ACTION:
 			ResetWifi()
+			<-time.After(time.Second * 2)
 		case DATETIME_ACTION:
 
 		// these actions hang
@@ -114,8 +117,6 @@ func checkAction(actionString string, tagSet *intSet.IntSet, tags *atomic.Int64,
 		default:
 			return
 		}
-
-		<-time.After(time.Second * 3)
 	}
 }
 
@@ -125,15 +126,9 @@ const (
 	STATE_PC_DATA_REPORT
 )
 
-// function for the state transition, it goes: 0, 0, 0, 1, 2, 0 ...
+// function for the state transition, it goes: 0, 0, 0, 1, 1, 2, 0 ...
 func transitionStep(c int) int {
-	r := c % 5
-
-	if r < 3 {
-		return 0
-	} else {
-		return r - 2
-	}
+	return (c % 5) / 2
 }
 
 func (a *Ay) Process() {
@@ -276,7 +271,7 @@ func (a *Ay) Process() {
 			actionString, hasAction := sender.Recv()
 
 			if hasAction {
-				checkAction(actionString, &tagSet, &pcData.Tags, &pcData.Antennas)
+				checkAction(actionString, &state, &tagSet, &pcData.Tags, &pcData.Antennas)
 			}
 
 			select {
