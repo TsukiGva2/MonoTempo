@@ -25,7 +25,7 @@ CREATE TABLE equipamento
    id               INTEGER NOT NULL PRIMARY KEY
 ,  idequip          INTEGER NOT NULL
 ,  event_id         INTEGER NOT NULL
-,  check            INTEGER NOT NULL DEFAULT 0
+,  check            INTEGER NOT NULL
 ,  modelo           TEXT    NOT NULL
 );
 CREATE TABLE event_data
