@@ -56,7 +56,7 @@ mytempo_upload_dir() {
 
 			# actual volume directory
 			mytempo_upload "$d"
-		done
+		done 1>/tmp/"$1".log 2>/tmp/"$1".err
 }
 
 mytempo_upload_backup() {
@@ -211,6 +211,10 @@ export VERSION_NUMBER_AA2
 while true; do
 	rm "$DATABASE_DIR"/*-journal
 	rm "$DATABASE_DIR"/equipamento.db
+
+	cat /tmp/*.log
+	rm /tmp/*.log
+	rm /tmp/*.err
 
 	# set initial value of tag count
 	TAG_COUNT_START_AT=$(mytempo_count_tags)
