@@ -110,8 +110,9 @@ em caso de erro, redireciona para o Banco de Dados.
 func (reenvio *Reenvio) TentarReenvio(lotes <-chan []atleta.Atleta) (err error) {
 
 	var (
-		tempos []atleta.Atleta
-		ok     bool
+		tempos    []atleta.Atleta
+		ok        bool
+		uploadErr error
 	)
 
 	/*
@@ -134,14 +135,18 @@ func (reenvio *Reenvio) TentarReenvio(lotes <-chan []atleta.Atleta) (err error) 
 		select {
 		case tempos, ok = <-lotes:
 			if !ok {
-
 				return
 			}
 
 			// TODO: log to file
-			log.Println(reenvio.Upload(tempos))
+			uploadErr = reenvio.Upload(tempos)
+
+			if uploadErr != nil {
+				log.Printf("LOTE C/ ERRO %s\n", uploadErr)
+			}
+
 		case <-timeoutMon:
-			err = fmt.Errorf("Timeout, deixando para enviar depois")
+			err = fmt.Errorf("timeout, deixando para enviar depois")
 			return
 		}
 	}
