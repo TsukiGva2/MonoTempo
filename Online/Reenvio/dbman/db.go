@@ -32,8 +32,9 @@ type MADB struct { // client version
 	databases []Baselet
 }
 
-func NewBaselet(path string) (b Baselet, err error) {
+func NewBaselet(path string, check bool) (b Baselet, err error) {
 
+	b.IsCheckpoint = check
 	b.Path = path
 
 	err = b.Init()
@@ -143,8 +144,6 @@ func (b *Baselet) Monitor() (tempos <-chan atleta.Atleta) {
 
 		b.db.Exec(ATTACH)
 
-		log.Printf("Checkpoint? %t\n", b.IsCheckpoint)
-
 		if !b.IsCheckpoint {
 			b.ScanCheckpoint(QUERY_LARGADA, t)
 			b.ScanCheckpoint(QUERY_CHEGADA, t)
@@ -208,14 +207,13 @@ func (m *MADB) Add() (err error) {
 	)
 
 	b, err = NewBaselet(
-		fmt.Sprintf("%s/N%d.db", m.DatabaseRoot, len(m.databases)))
+		fmt.Sprintf("%s/N%d.db", m.DatabaseRoot, len(m.databases)),
+		m.IsCheckpoint)
 
 	if err != nil {
 
 		return
 	}
-
-	b.IsCheckpoint = m.IsCheckpoint // inherit
 
 	m.databases = append(m.databases, b)
 
