@@ -95,6 +95,7 @@ mytempo_dump_all() {
 
 	not_empty "$BACKUP_DIR" &&
 		for d in "$BACKUP_DIR"/*; do
+			printf "Dumping %s\n" "$(basename "$d")" >>/tmp/dump_log
 			mytempo_dump_db "$d" "$1" >/tmp/"dump$(basename "$d")"
 		done
 
