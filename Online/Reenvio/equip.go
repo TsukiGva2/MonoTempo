@@ -26,7 +26,7 @@ func (equip *Equipamento) Atualiza() (err error) {
 
 	defer equip_db.Close()
 
-	query := `SELECT idequip, modelo, event_id, check FROM equipamento WHERE 1;`
+	query := `SELECT idequip, modelo, event_id, check_id FROM equipamento WHERE 1;`
 
 	res, err := equip_db.Query(query)
 
