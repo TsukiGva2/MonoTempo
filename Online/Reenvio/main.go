@@ -42,7 +42,10 @@ func main() {
 		log.Fatalf("Erro atualizando equipamento: %s\n", err)
 	}
 
-	r.Tempos.IsCheckpoint = r.Equip.Check != 0
+	if r.Equip.Check != 0 {
+		log.Println("Checkpoint detectado, modo automático desativado")
+		r.Tempos.IsCheckpoint = true
+	}
 
 	r.Tempos.DatabaseRoot = "/var/monotempo-data/"
 
