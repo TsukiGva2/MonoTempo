@@ -233,24 +233,16 @@ func (a *Ay) Process() {
 	equipStatus, err := logparse.ParseJSONLog("/var/monotempo-data/logs/pc.log")
 
 	if err != nil {
-		log.Printf("Erro ao analisar o log JSON: %v", err)
+		log.Println("Erro ao analisar o log JSON", err)
 
 		pcData.SendPCDataReport(sender)
-		<-time.After(time.Second * 3)
 	} else {
-		// send the collected reports
 		pcData.SendLogReport(sender, &equipStatus)
-		<-time.After(time.Second * 3) // wake up
-
-		// send 2 seconds of logs to boot up the system
-		for range 10 { // 10 * 200 = 2000ms = 2s
-			pcData.SendLogReport(sender, &equipStatus)
-			<-time.After(time.Millisecond * 200)
-		}
 	}
 
-	//NUM_EQUIP, err := strconv.Atoi(os.Getenv("MYTEMPO_DEVID"))
+	<-time.After(time.Second * 3)
 
+	//NUM_EQUIP, err := strconv.Atoi(os.Getenv("MYTEMPO_DEVID"))
 	// TODO: revert everything you did today again
 
 	go func() {
