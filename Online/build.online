@@ -1,16 +1,13 @@
 #!/bin/sh
 
 error() {
-    exit 1
+	exit 1
 }
 
-dir=$(realpath $(dirname $0))
+dir=$(realpath "$(dirname "$0")")
 
-cd $dir/Receba
-docker build --tag="receba:1.0" . || error
+cd "$dir"/Receba || error
+docker build --network=host --tag="receba:1.0" . || error
 
-cd $dir/Reenvio
-docker build --tag="reenvio:1.0" . || error
-
-cd ..
-
+cd "$dir"/Reenvio || error
+docker build --network=host --tag="reenvio:1.0" . || error
