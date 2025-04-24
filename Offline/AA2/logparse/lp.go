@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -71,6 +72,10 @@ func ParseJSONLog(filePath string) (st EquipStatus, err error) {
 	st.Databases = dbTotal
 	st.UploadCount = athletes
 	st.Errcount = errs
+
+	if math.IsNaN(st.AvgProctime) {
+		st.AvgProctime = 0
+	}
 
 	if dbTotal == 0 {
 		st.Status = false

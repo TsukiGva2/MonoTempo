@@ -184,11 +184,11 @@ typedef struct PCData
 
 typedef struct LOGData
 {
-	bool status;
-	int errcount;
-	int databases;
 	int uploadcount;
+	int databases;
 	double avgproctime;
+	int errcount;
+	bool status;
 } LOGData;
 
 LOGData g_system_logs;
@@ -456,9 +456,13 @@ bool parse_pc_data(SafeString &msg)
 	{
 		g_does_log_reports = true;
 
+		g_system_logs.uploadcount = g_system_data.tag_data.tags;
+		g_system_logs.databases = g_system_data.tag_data.unique_tags;
+
 		idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-		g_system_logs.status = field.equals("1");
+		if (!field.toDouble(g_system_logs.avgproctime))
+			return false;
 
 		idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
@@ -467,18 +471,7 @@ bool parse_pc_data(SafeString &msg)
 
 		idx = msg.stoken(field, idx, delims, returnEmptyFields);
 
-		if (!field.toInt(g_system_logs.databases))
-			return false;
-
-		idx = msg.stoken(field, idx, delims, returnEmptyFields);
-
-		if (!field.toInt(g_system_logs.uploadcount))
-			return false;
-
-		idx = msg.stoken(field, idx, delims, returnEmptyFields);
-
-		if (!field.toDouble(g_system_logs.avgproctime))
-			return false;
+		g_system_logs.status = field.equals("1");
 	}
 
 	idx = msg.stoken(field, idx, delims, returnEmptyFields);
