@@ -3,12 +3,13 @@ package dbman
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
+	"time"
 
 	"database/sql"
 
 	"github.com/MyTempoESP/Reenvio/atleta"
+	"go.uber.org/zap"
 
 	//"sync/atomic"
 
@@ -22,6 +23,8 @@ type Baselet struct {
 	db     *sql.DB
 	opened bool
 
+	Logger *zap.Logger
+
 	Tempos <-chan atleta.Atleta
 }
 
@@ -29,13 +32,20 @@ type MADB struct { // client version
 	DatabaseRoot string // path to the database dir
 	IsCheckpoint bool   // true if this is a checkpoint database
 
+	Logger *zap.Logger
+
 	databases []Baselet
 }
 
-func NewBaselet(path string, check bool) (b Baselet, err error) {
+func NewBaselet(path string, check bool, n int, logger *zap.Logger) (b Baselet, err error) {
 
 	b.IsCheckpoint = check
 	b.Path = path
+
+	b.Logger = logger.With(
+		zap.Int("baselet_id", n),
+		zap.String("db_sub_path", path),
+	)
 
 	err = b.Init()
 
@@ -44,12 +54,17 @@ func NewBaselet(path string, check bool) (b Baselet, err error) {
 
 func (b *Baselet) Init() (err error) {
 
+	b.Logger.Info("Iniciando baselet...")
+
 	err = b.Open()
 
 	if err != nil {
 
+		b.Logger.Error("Erro ao abrir baselet", zap.Error(err))
 		return
 	}
+
+	b.Logger.Info("Baselet aberto com sucesso!")
 
 	b.beginMonitor()
 
@@ -64,8 +79,6 @@ func (b *Baselet) Open() (err error) {
 	}
 
 	if _, err = os.Stat(b.Path); errors.Is(err, os.ErrNotExist) {
-
-		log.Printf("Arquivo inexistente: %s\n", b.Path)
 
 		return
 	}
@@ -90,13 +103,20 @@ func (b *Baselet) beginMonitor() {
 	b.Tempos = b.Monitor()
 }
 
-func (b *Baselet) ScanCheckpoint(query string, tempos chan<- atleta.Atleta) {
+func (b *Baselet) ScanCheckpoint(query string, logger *zap.Logger, tempos chan<- atleta.Atleta) {
+
+	startTime := time.Now()
+
+	logger.Info("Iniciando leitura de checkpoint...")
 
 	res, err := b.db.Query(query)
 
 	if err != nil {
 
-		log.Println("Erro checando atletas disponíveis", err)
+		logger.Error("Erro ao escanear os atletas",
+			zap.Error(err),
+			zap.Duration("duration", time.Since(startTime)),
+		)
 
 		return
 	}
@@ -116,9 +136,12 @@ func (b *Baselet) ScanCheckpoint(query string, tempos chan<- atleta.Atleta) {
 
 		if err != nil {
 
-			log.Println("Erro ao escanear os atletas: ", err)
+			logger.Error("Erro ao escanear os atletas obtidos na query",
+				zap.Error(err),
+				zap.Duration("duration", time.Since(startTime)),
+			)
 
-			break
+			return
 		}
 
 		tempos <- at
@@ -128,11 +151,22 @@ func (b *Baselet) ScanCheckpoint(query string, tempos chan<- atleta.Atleta) {
 
 	if err != nil {
 
-		log.Println("Erro ao escanear os atletas: ", err)
+		logger.Error("Erro ao escanear os atletas obtidos na query",
+			zap.Error(err),
+			zap.Duration("duration", time.Since(startTime)),
+		)
+
+		return
 	}
+
+	logger.Info("Leitura de checkpoint finalizada!",
+		zap.Duration("duration", time.Since(startTime)),
+	)
 }
 
 func (b *Baselet) Monitor() (tempos <-chan atleta.Atleta) {
+
+	b.Logger.Info("Iniciando monitoramento...")
 
 	t := make(chan atleta.Atleta, 20) // groupSize
 
@@ -141,14 +175,24 @@ func (b *Baselet) Monitor() (tempos <-chan atleta.Atleta) {
 	go func() {
 
 		defer func() { close(t) }()
+		defer b.Logger.Info("Monitoramento encerrado!")
 
-		b.db.Exec(ATTACH)
+		_, err := b.db.Exec(ATTACH)
+
+		if err != nil {
+			b.Logger.Error("Erro obtendo dados do equipamento", zap.Error(err))
+			return
+		}
 
 		if !b.IsCheckpoint {
-			b.ScanCheckpoint(QUERY_LARGADA, t)
-			b.ScanCheckpoint(QUERY_CHEGADA, t)
+			logger := b.Logger.With(zap.String("checkpoint_type", "largada"))
+			b.ScanCheckpoint(QUERY_LARGADA, logger, t)
+
+			logger = b.Logger.With(zap.String("checkpoint_type", "chegada"))
+			b.ScanCheckpoint(QUERY_CHEGADA, logger, t)
 		} else {
-			b.ScanCheckpoint(QUERY_CHECKPOINT, t)
+			logger := b.Logger.With(zap.String("checkpoint_type", "checkpoint"))
+			b.ScanCheckpoint(QUERY_CHECKPOINT, logger, t)
 		}
 	}()
 
@@ -176,8 +220,9 @@ func (b *Baselet) Close() {
 	}
 
 	b.db.Close()
-
 	b.opened = false
+
+	b.Logger.Info("Baselet fechado com sucesso!")
 }
 
 func (m *MADB) Get() (lotes <-chan []atleta.Atleta) {
@@ -187,11 +232,20 @@ func (m *MADB) Get() (lotes <-chan []atleta.Atleta) {
 	go func() {
 		defer func() { close(l) }()
 
-		for _, b := range m.databases {
+		for n, b := range m.databases {
+			logger := m.Logger.With(
+				zap.Int("baselet_id", n))
 
-			log.Println("Recebendo lote...")
+			startTime := time.Now()
+			logger.Info("Recebendo lote...")
 
-			l <- b.Get()
+			a := b.Get()
+			l <- a
+
+			logger.Info("Lote recebido com sucesso",
+				zap.Duration("duration", time.Since(startTime)),
+				zap.Int("batch_size", len(a)),
+			)
 		}
 	}()
 
@@ -206,9 +260,14 @@ func (m *MADB) Add() (err error) {
 		b Baselet
 	)
 
+	n := len(m.databases)
+
 	b, err = NewBaselet(
-		fmt.Sprintf("%s/N%d.db", m.DatabaseRoot, len(m.databases)),
-		m.IsCheckpoint)
+		fmt.Sprintf("%s/N%d.db", m.DatabaseRoot, n),
+		m.IsCheckpoint,
+		n,
+		m.Logger,
+	)
 
 	if err != nil {
 
@@ -221,6 +280,9 @@ func (m *MADB) Add() (err error) {
 }
 
 func (m *MADB) Grow(amount int) (err error) {
+
+	m.Logger.Info("Crescendo MADB...",
+		zap.Int("amount", amount))
 
 	for range amount {
 
@@ -237,9 +299,9 @@ func (m *MADB) Grow(amount int) (err error) {
 
 func (m *MADB) Close() {
 
-	for _, b := range m.databases {
+	m.Logger.Info("Fechando MADB...")
 
-		log.Println("closed!")
+	for _, b := range m.databases {
 
 		b.Close()
 	}

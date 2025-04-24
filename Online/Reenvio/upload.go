@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"encoding/json"
 
 	"github.com/MyTempoESP/Reenvio/atleta"
+	"go.uber.org/zap"
 )
 
 const (
@@ -44,28 +44,42 @@ type AtletasForm struct {
 	Atletas       []atleta.Atleta `json:"atletas"`
 }
 
-func (reenvio *Reenvio) Upload(atletas []atleta.Atleta) (err error) {
+func (reenvio *Reenvio) Upload(atletas []atleta.Atleta, logger *zap.Logger) {
+
+	startTime := time.Now()
+
+	logger = logger.With(
+		zap.Int("athlete_count", len(atletas)),
+	)
 
 	if len(atletas) == 0 {
 
-		log.Println("Ignorando lote vazio de atletas para reenvio.")
+		logger.Warn("Lista de atletas vazia")
 
 		return
 	}
 
 	if reenvio.Equip.ID == 0 {
 
-		err = fmt.Errorf("Equipamento inválido! (0)\n")
+		logger.Error("Equip inválido")
 
 		return
 	}
+
+	logger = logger.With(
+		zap.Int("equipamento_id", reenvio.Equip.ID),
+	)
 
 	if reenvio.Equip.ProvaID == 0 {
 
-		err = fmt.Errorf("Prova inválida! (0)\n")
+		logger.Error("Prova inválida")
 
 		return
 	}
+
+	logger = logger.With(
+		zap.Int("prova_id", reenvio.Equip.ProvaID),
+	)
 
 	dados := AtletasForm{
 		reenvio.Equip.ID,
@@ -77,25 +91,37 @@ func (reenvio *Reenvio) Upload(atletas []atleta.Atleta) (err error) {
 
 	if err != nil {
 
-		err = fmt.Errorf("Erro na conversão dos dados: %s\n", err)
+		logger.Error("Erro ao serializar dados",
+			zap.Error(err))
 
 		return
 	}
 
 	/* NOTE: DEBUG */
-	log.Printf("Dados para a request: %s\n", string(data))
+	logger.Debug("Dados a serem enviados",
+		zap.String("dados", string(data)),
+	)
+
+	logger = logger.With(zap.String("endpoint", UrlTempos))
+	logger.Info("Enviando dados para a API")
 
 	/*
 		O erro na request não é retornado, apenas lidamos com ele.
 	*/
-	uploadErr := SimpleRawRequest(UrlTempos, data, "application/json")
+	err = SimpleRawRequest(UrlTempos, data, "application/json")
 
-	if uploadErr != nil {
+	if err != nil {
+		logger.Error("Erro ao enviar dados",
+			zap.Error(err),
+			zap.Duration("tempo", time.Since(startTime)),
+		)
 
-		err = fmt.Errorf("Tentativa de reenvio de um lote falhou. (erro: %s)\n", uploadErr)
+		return
 	}
 
-	return
+	logger.Info("Dados enviados com sucesso",
+		zap.Duration("tempo", time.Since(startTime)),
+	)
 }
 
 /*
@@ -107,12 +133,11 @@ ter 17 set 2024 12:34:47 -03
 Aguarda por dados de reenvio e tenta o envio para a API,
 em caso de erro, redireciona para o Banco de Dados.
 */
-func (reenvio *Reenvio) TentarReenvio(lotes <-chan []atleta.Atleta) (err error) {
+func (reenvio *Reenvio) TentarReenvio(lotes <-chan []atleta.Atleta, logger *zap.Logger) (err error) {
 
 	var (
-		tempos    []atleta.Atleta
-		ok        bool
-		uploadErr error
+		tempos []atleta.Atleta
+		ok     bool
 	)
 
 	/*
@@ -127,6 +152,8 @@ func (reenvio *Reenvio) TentarReenvio(lotes <-chan []atleta.Atleta) (err error) 
 		min(TIMEOUT_MONITORAMENTO, REENVIO_INTERVALO-1),
 	)
 
+	logger = logger.With(zap.Duration("timeout", TIMEOUT_MONITORAMENTO))
+
 	/*
 		Se houver registros, receba.
 		Caso contrário, não bloqueie o código.
@@ -138,14 +165,10 @@ func (reenvio *Reenvio) TentarReenvio(lotes <-chan []atleta.Atleta) (err error) 
 				return
 			}
 
-			// TODO: log to file
-			uploadErr = reenvio.Upload(tempos)
-
-			if uploadErr != nil {
-				log.Printf("LOTE C/ ERRO %s\n", uploadErr)
-			}
+			reenvio.Upload(tempos, logger)
 
 		case <-timeoutMon:
+			logger.Warn("Timeout de monitoramento atingido")
 			err = fmt.Errorf("timeout, deixando para enviar depois")
 			return
 		}

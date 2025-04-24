@@ -6,6 +6,7 @@ import (
 	"time"
 
 	backoff "github.com/cenkalti/backoff"
+	"go.uber.org/zap"
 )
 
 func countDir(path string) (n int, err error) {
@@ -35,37 +36,63 @@ func main() {
 
 	var r Reenvio
 
-	err := r.Equip.Atualiza()
+	logger, err := zap.NewProduction()
 
 	if err != nil {
+		panic(err)
+	}
 
-		log.Fatalf("Erro atualizando equipamento: %s\n", err)
+	r.Logger = logger
+
+	err = r.Equip.Atualiza()
+
+	logger = r.Logger.With(
+		zap.String("equipamento", r.Equip.Nome),
+		zap.Int("equip_id", r.Equip.ID),
+		zap.Int("prova_id", r.Equip.ProvaID),
+		zap.Int("check_id", r.Equip.Check),
+	)
+
+	logger.Info("Equipamento atualizado, iniciando reenvio de dados...")
+
+	if err != nil {
+		logger.Error("Erro ao atualizar equipamento", zap.Error(err))
+		os.Exit(1)
 	}
 
 	if r.Equip.Check != 0 {
-		log.Println("Checkpoint detectado, modo automático desativado")
+		logger.Debug("Checkpoint detectado, modo automático desativado")
 		r.Tempos.IsCheckpoint = true
 	}
 
 	r.Tempos.DatabaseRoot = "/var/monotempo-data/"
 
+	logger = r.Logger.With(
+		zap.String("database_root", r.Tempos.DatabaseRoot),
+	)
+
+	logger.Info("Contando arquivos de banco de dados")
+
 	n, err := countDir(r.Tempos.DatabaseRoot)
 
 	if err != nil {
-
-		log.Fatalf("Couldn't count files: %s\n", err)
+		logger.Error("Erro ao contar arquivos de banco de dados", zap.Error(err))
+		os.Exit(1)
 	}
 
-	log.Printf("Processing %d databases...\n", n)
+	logger.Info("Arquivos encontrados, iniciando MADB",
+		zap.Int("databases", n))
+
+	r.Tempos.Logger = logger.With(
+		zap.String("db_root_path", r.Tempos.DatabaseRoot),
+		zap.Bool("is_checkpoint", r.Tempos.IsCheckpoint),
+	)
 
 	r.Tempos.Grow(n)
 
 	lotes := r.Tempos.Get()
 
-	if err != nil {
-
-		log.Fatalf("Couldn't Get data: %s\n", err)
-	}
+	r.Logger.Info("Enviando dados")
 
 	bf := backoff.NewExponentialBackOff()
 
@@ -75,12 +102,7 @@ func main() {
 	err = backoff.Retry(
 		func() (err error) {
 
-			err = r.TentarReenvio(lotes)
-
-			if err != nil {
-
-				log.Println(err)
-			}
+			err = r.TentarReenvio(lotes, r.Logger)
 
 			return
 		},

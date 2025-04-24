@@ -86,7 +86,7 @@ mytempo_dump_db() {
 	done | perl -ne '
 		chomp;
 		@F = split(/,/);
-		
+
 		$num = $F[0];
 		$tme = $F[1];
 		$ant = $F[2];

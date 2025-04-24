@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -31,7 +30,7 @@ func SimpleRawRequest(url string, data RawForm, contentType string) (err error) 
 			req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 
 			if err != nil {
-				err = fmt.Errorf("Error creating request: %s\n", err)
+				err = fmt.Errorf("error creating request: %s", err)
 
 				return
 			}
@@ -39,11 +38,6 @@ func SimpleRawRequest(url string, data RawForm, contentType string) (err error) 
 			req.Header.Set("Content-Type", contentType)
 
 			res, err = http.DefaultClient.Do(req)
-
-			/* FIXME: remove excessive loggin */
-			if err != nil {
-				log.Println("Error sending request:", err)
-			}
 
 			return
 		},
@@ -58,21 +52,18 @@ func SimpleRawRequest(url string, data RawForm, contentType string) (err error) 
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Error connecting to '%s': got HTTP %d\n", url, res.StatusCode)
+		err = fmt.Errorf("error connecting to '%s': got HTTP %d", url, res.StatusCode)
 
 		return
 	}
 
-	body, err := io.ReadAll(res.Body)
+	_, err = io.ReadAll(res.Body)
 
 	if err != nil {
-		err = fmt.Errorf("Error reading response body: %s\n", err)
+		err = fmt.Errorf("error reading response body: %s", err)
 
 		return
 	}
-
-	// NOTE: You can comment out this section safely
-	log.Println("\033[31;1m " + string(body) + " \033[0m")
 
 	return
 }
