@@ -87,7 +87,7 @@ func main() {
 		zap.Bool("is_checkpoint", r.Tempos.IsCheckpoint),
 	)
 
-	r.Tempos.Grow(n)
+	r.Tempos.Grow(n - 1)
 
 	lotes := r.Tempos.Get()
 

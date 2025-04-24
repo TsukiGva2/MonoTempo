@@ -284,6 +284,10 @@ func (m *MADB) Grow(amount int) (err error) {
 	m.Logger.Info("Crescendo MADB...",
 		zap.Int("amount", amount))
 
+	if amount < 1 {
+		return
+	}
+
 	for range amount {
 
 		err = m.Add()
