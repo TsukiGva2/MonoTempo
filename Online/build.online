@@ -6,6 +6,8 @@ error() {
 
 dir=$(realpath "$(dirname "$0")")
 
+export DOCKER_BUILDKIT=1
+
 cd "$dir"/Receba || error
 docker build --network=host --tag="receba:1.0" . || error
 
