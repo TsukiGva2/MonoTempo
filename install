@@ -15,6 +15,9 @@ prompt_user() {
 	read -r "$2"
 }
 
+pacman -V 2>/dev/null 1>/dev/null || error "This script is meant to be run on Arch Linux"
+pacman -Q docker-buildx 2>/dev/null 1>/dev/null || pacman -Sy docker-buildx
+
 # switch to update as default
 UPDATING=yes
 REMAKE_ENVIRONMENT=no
