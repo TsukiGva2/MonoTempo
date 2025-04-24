@@ -57,7 +57,7 @@ func ParseJSONLog(filePath string) (st EquipStatus, err error) {
 			case "Leitura de checkpoint finalizada!":
 				dbProc++
 				// centiseconds
-				avg += int(m["tempo"].(float64) * 100)
+				avg += int(m["duration"].(float64) * 100)
 			}
 		}
 
