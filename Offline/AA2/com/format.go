@@ -102,6 +102,16 @@ func (pd *PCData) formatTagReport() string {
 	return withChecksum(f)
 }
 
+func (pd *PCData) formatLogReport(equipStatus *logparse.EquipStatus) string {
+	currentEpoch := epoch()
+
+	f := fmt.Sprintf("MYTMP;0;0;L;%d;%d;%d;%d;%d;%d",
+		equipStatus.UploadCount, equipStatus.Databases, equipStatus.AvgProctime,
+		equipStatus.Errcount, boolToInt(equipStatus.Status), currentEpoch)
+
+	return withChecksum(f)
+}
+
 func (pd *PCData) SendTagReport(sender *SerialSender) {
 	data := pd.formatTagReport()
 	log.Println("Sending TagReport:", data)
@@ -121,13 +131,7 @@ func (pd *PCData) SendPCDataReport(sender *SerialSender) {
 }
 
 func (pd *PCData) SendLogReport(sender *SerialSender, equipStatus *logparse.EquipStatus) {
-	currentEpoch := epoch()
-
-	// logs send no tags
-	data := fmt.Sprintf("MYTMP;0;0;L;%d;%d;%d;%d;%d;%d",
-		equipStatus.UploadCount, equipStatus.Databases, equipStatus.AvgProctime,
-		equipStatus.Errcount, boolToInt(equipStatus.Status), currentEpoch)
-
+	data := pd.formatLogReport(equipStatus)
 	log.Println("Sending LogReport:", data)
 	sender.SendData(data)
 }
