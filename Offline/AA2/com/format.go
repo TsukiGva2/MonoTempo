@@ -1,6 +1,7 @@
 package com
 
 import (
+	"aa2/logparse"
 	"fmt"
 	"log"
 	"sync/atomic"
@@ -116,5 +117,16 @@ func (pd *PCData) SendAntennaReport(sender *SerialSender) {
 func (pd *PCData) SendPCDataReport(sender *SerialSender) {
 	data := pd.formatPCDataReport()
 	log.Println("Sending PCDataReport:", data)
+	sender.SendData(data)
+}
+
+func (pd *PCData) SendLogReport(sender *SerialSender, equipStatus *logparse.EquipStatus) {
+	currentEpoch := epoch()
+
+	data := fmt.Sprintf("MYTMP;%d;%d;L;%f;%d;%d;%d",
+		equipStatus.UploadCount, equipStatus.Databases, equipStatus.AvgProctime,
+		equipStatus.Errcount, boolToInt(equipStatus.Status), currentEpoch)
+
+	log.Println("Sending LogReport:", data)
 	sender.SendData(data)
 }

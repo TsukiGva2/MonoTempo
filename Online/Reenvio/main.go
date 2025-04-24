@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -112,8 +111,7 @@ func main() {
 
 	if err != nil {
 
-		log.Printf("Não foi possível enviar dados: %s\n", err)
-
+		logger.Error("Erro no reenvio", zap.Error(err))
 		os.Exit(1)
 	}
 }

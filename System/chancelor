@@ -1,12 +1,13 @@
 #!/bin/sh
 
-set -o xtrace
+#set -o xtrace
 
 # mytempo directory
 MYTEMPO_DATA=
 DATABASE_DIR="$MYTEMPO_DATA"/database
 BACKUP_DIR="$DATABASE_DIR"/backup
 ENVIO_DIR="$DATABASE_DIR"/envio
+LOG_DIR="$DATABASE_DIR"/logs
 
 not_empty() {
 
@@ -51,12 +52,10 @@ mytempo_upload_dir() {
 	directory="$DATABASE_DIR/$1"
 	not_empty "$directory" &&
 		for d in "$directory"/*; do
-
 			cp "$DATABASE_DIR"/equipamento.db "$d"
-
 			# actual volume directory
 			mytempo_upload "$d"
-		done 1>/tmp/"$1".log 2>/tmp/"$1".err
+		done 2>"$LOG_DIR/pc.log"
 }
 
 mytempo_upload_backup() {
@@ -212,6 +211,9 @@ mytempo_move_envio_to_backup
 VERSION_NUMBER_AA2=$(cd "$MYTEMPO_DATA" && git rev-list --count --all)
 export VERSION_NUMBER_AA2
 
+# clean up logs
+echo '{"level":"info","msg":"No data"}' >"$LOG_DIR"/pc.log
+
 while true; do
 	rm "$DATABASE_DIR"/*-journal
 	rm "$DATABASE_DIR"/equipamento.db
@@ -232,6 +234,9 @@ while true; do
 	"$MYTEMPO_DATA"/Offline/stop.offline
 
 	mytempo_backup_to envio
+
+	# clean up logs
+	echo '{"level":"info","msg":"No data"}' >"$LOG_DIR"/pc.log
 
 	case "$UPLOAD_TYPE" in
 	"fatal") ;;

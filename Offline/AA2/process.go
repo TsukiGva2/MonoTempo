@@ -11,6 +11,7 @@ import (
 	"aa2/com"
 	"aa2/constant"
 	"aa2/intSet"
+	"aa2/logparse"
 	"aa2/pinger"
 	"aa2/usb"
 )
@@ -229,9 +230,22 @@ func (a *Ay) Process() {
 		pcData.SysCodeName = deviceId
 	}
 
-	// Envia os dados iniciais
-	pcData.SendPCDataReport(sender)
-	<-time.After(time.Second * 3)
+	equipStatus, err := logparse.ParseJSONLog("/var/monotempo-data/logs/pc.log")
+
+	if err != nil {
+		log.Printf("Erro ao analisar o log JSON: %v", err)
+
+		pcData.SendPCDataReport(sender)
+		<-time.After(time.Second * 3)
+	} else {
+		pcData.SendLogReport(sender, &equipStatus)
+		<-time.After(time.Second * 1) // wake up
+
+		for range 10 { // 10 * 200 = 2000ms = 2s
+			pcData.SendLogReport(sender, &equipStatus)
+			<-time.After(time.Millisecond * 200)
+		}
+	}
 
 	//NUM_EQUIP, err := strconv.Atoi(os.Getenv("MYTEMPO_DEVID"))
 

@@ -182,10 +182,23 @@ typedef struct PCData
 	int second;
 } PCData;
 
+typedef struct LOGData
+{
+	bool status;
+	int errcount;
+	int databases;
+	int uploadcount;
+	double avgproctime;
+} LOGData;
+
+LOGData g_system_logs;
 PCData g_system_data;
 
-// wether or not the antenna reports are enabled
+// whether or not the antenna reports are enabled
 bool g_does_antenna_reports = false;
+
+// whether or not the log reports are enabled
+bool g_does_log_reports = false;
 
 // create a SafeString reader to read the struct data
 createSafeStringReader(serial_reader, 120, '\n', true);
@@ -438,6 +451,34 @@ bool parse_pc_data(SafeString &msg)
 
 		if (!field.toInt(g_system_data.permanent_unique_tags))
 			return false;
+	} // do LOGData update
+	else if (field.equals("L"))
+	{
+		g_does_log_reports = true;
+
+		idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+		g_system_logs.status = field.equals("1");
+
+		idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+		if (!field.toInt(g_system_logs.errcount))
+			return false;
+
+		idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+		if (!field.toInt(g_system_logs.databases))
+			return false;
+
+		idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+		if (!field.toInt(g_system_logs.uploadcount))
+			return false;
+
+		idx = msg.stoken(field, idx, delims, returnEmptyFields);
+
+		if (!field.toDouble(g_system_logs.avgproctime))
+			return false;
 	}
 
 	idx = msg.stoken(field, idx, delims, returnEmptyFields);
@@ -531,6 +572,15 @@ void screen_build(void)
 {
 	unsigned int l0 = 0, l1 = 0, l2 = 0;
 
+	if (g_does_log_reports)
+	{
+		l0 = virt_scr_sprintf(0, 0, "subiu: %d", g_system_logs.uploadcount);
+		l1 = virt_scr_sprintf(0, 1, "dur.med. %.2fs", g_system_logs.avgproctime);
+		l2 = virt_scr_sprintf(0, 2, "erros: %d", g_system_logs.errcount);
+
+		goto skip;
+	}
+
 	switch (g_current_screen)
 	{
 	case INFORM_SCREEN:
@@ -613,11 +663,12 @@ void screen_build(void)
 		l0 = virt_scr_sprintf(0, 0, "PORTAL my%d", g_system_data.num_serie);
 	}
 
+	virt_scr_sprintf(0, 3, "%s", desc[g_current_screen]);
+
+skip:
 	virt_scr_fill_from(l0, 0);
 	virt_scr_fill_from(l1, 1);
 	virt_scr_fill_from(l2, 2);
-
-	virt_scr_sprintf(0, 3, "%s", desc[g_current_screen]);
 }
 
 void screen_poweroff_countdown(void)
@@ -779,7 +830,15 @@ void handle_buttons(void)
 	if (g_locked)
 		return;
 
-	switch (check_clicked())
+	int c = check_clicked();
+
+	if (g_does_log_reports && c)
+	{
+		// a keypress exits the log screen
+		g_does_log_reports = false;
+	}
+
+	switch (c)
 	{
 	case BUTTON_VANCE:
 		screen_next();
