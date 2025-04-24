@@ -66,7 +66,10 @@ func ParseJSONLog(filePath string) (st EquipStatus, err error) {
 
 	st.Status = true
 
-	st.AvgProctime = avg / dbProc
+	if dbProc > 0 {
+		st.AvgProctime = avg / dbProc
+	}
+
 	st.Databases = dbTotal
 	st.UploadCount = athletes
 	st.Errcount = errs
