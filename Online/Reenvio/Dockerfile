@@ -7,14 +7,12 @@ WORKDIR /app
 # Copy the Go modules and dependencies files
 COPY go.mod go.sum ./
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    go mod download
+COPY vendor/ .vendor/
 
 # Copy the source code into the container
 COPY . .
 
-RUN go mod tidy
+ENV GOFLAGS="-mod=vendor"
 
 # Build the Go application
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o Reenvio
