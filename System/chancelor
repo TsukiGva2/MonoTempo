@@ -22,6 +22,9 @@ mytempo_upload() {
 mytempo_update() {
 
 	"$MYTEMPO_DATA"/Online/setup.online "$DATABASE_DIR" update 2>"$LOG_DIR/pc.log"
+
+	# zero receival errors?
+	[ -z "$(jq -c "select(.error)" "$LOG_DIR/pc.log")" ]
 }
 
 mytempo_save() {
@@ -59,16 +62,14 @@ mytempo_upload_dir() {
 
 mytempo_upload_backup() {
 
-	mytempo_update
-	mytempo_upload_dir backup
+	mytempo_update &&
+		mytempo_upload_dir backup
 }
 
 mytempo_upload_normal() {
 
-	mytempo_update
-
-	# send files in envio directory (
-	mytempo_upload_dir envio
+	mytempo_update &&
+		mytempo_upload_dir envio
 
 	mytempo_move_envio_to_backup
 }
