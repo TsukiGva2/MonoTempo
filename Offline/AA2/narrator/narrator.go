@@ -31,6 +31,7 @@ func readCsvFile(filePath string) (records [][]string, err error) {
 type Narrator struct {
 	Enabled bool
 
+	queue      chan int
 	characters map[int]string
 }
 
@@ -38,6 +39,7 @@ func NewFromFile(path string) (n Narrator, err error) {
 
 	n.Enabled = true
 	n.characters = make(map[int]string)
+	n.queue = make(chan int, 200)
 
 	_, err = os.Stat(path)
 
@@ -75,13 +77,19 @@ func NewFromFile(path string) (n Narrator, err error) {
 }
 
 func (n *Narrator) SearchAndSay(id int) {
+	n.queue <- id
+}
 
-	character, ok := n.characters[id]
+func (n *Narrator) Watch() {
 
-	if !ok {
-		n.characters[id] = ""
-		Say(strconv.Itoa(id))
-	} else {
-		Say(fmt.Sprintf("%s, Número: %d", character, id))
+	for id := range n.queue {
+		character, ok := n.characters[id]
+
+		if !ok {
+			n.characters[id] = ""
+			Say(strconv.Itoa(id))
+		} else {
+			Say(fmt.Sprintf("%s, Número: %d", character, id))
+		}
 	}
 }

@@ -148,6 +148,8 @@ func (a *Ay) Process() {
 		log.Println("Running with empty narrator config, error:", err)
 	}
 
+	go narrator.Watch()
+
 	populateTagSet(&tagSet, &permanentTagSet)
 
 	tags_start_at := os.Getenv("TAG_COUNT_START_AT")
