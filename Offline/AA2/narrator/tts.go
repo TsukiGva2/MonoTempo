@@ -7,7 +7,7 @@ import (
 )
 
 func Say(s string) {
-	baseURL := "https://tts.docker/"
+	baseURL := "http://tts.docker:3000/"
 
 	params := url.Values{}
 	params.Add("text", s)
