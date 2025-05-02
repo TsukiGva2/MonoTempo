@@ -104,6 +104,13 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
+#include <stdlib.h>
+
+#include "voltage.h"
+constexpr float R1 = 30000.0f;
+constexpr float R2 = 7500.0f;
+float g_batteryf = .0f;
+
 #define BUTTON_VANCE 6
 #define BUTTON_START 7
 
@@ -536,14 +543,15 @@ const char fill_pattern[20] = "                   ";
 #define BACKUP_SCREEN 8
 #define DELETE_SCREEN 9
 #define SHTDWN_SCREEN 10
-#define LOGRPT_SCREEN 11
-#define NAV_SCREENS_COUNT 12
+#define BATTRY_SCREEN 11
+#define LOGRPT_SCREEN 12
+#define NAV_SCREENS_COUNT 13
 
-#define OFFMSG_SCREEN 13
-#define CONFRM_SCREEN 14
-#define WAITNG_SCREEN 15
-#define WAITON_SCREEN 16
-#define SCREENS_COUNT 17
+#define OFFMSG_SCREEN 14
+#define CONFRM_SCREEN 15
+#define WAITNG_SCREEN 16
+#define WAITON_SCREEN 17
+#define SCREENS_COUNT 18
 
 unsigned int g_current_screen = 0;
 unsigned int g_confirm_target = 0; // target screen for events that need confirmation
@@ -568,6 +576,7 @@ const char desc[SCREENS_COUNT][VIRT_SCR_COLS] = {
     "START:Desligar     ",
     "                   ",
     "START:Confirma     ",
+    "                   ",
     "                   ",
     "                   ",
     "                   "};
@@ -632,6 +641,11 @@ void screen_build(void)
 	case SHTDWN_SCREEN:
 		l0 = virt_scr_sprintf(0, 0, "Desligar o", NULL);
 		l1 = virt_scr_sprintf(0, 1, "equipamento", NULL);
+		break;
+	case BATTRY_SCREEN:
+		char batterystr[6];
+		dtostrf(g_batteryf, 5, 2, batterystr);
+		l1 = virt_scr_sprintf(0, 1, "Bateria: %s", batterystr);
 		break;
 	case LOGRPT_SCREEN:
 		l0 = virt_scr_sprintf(0, 0, "subiu: %d", g_system_logs.uploadcount);
@@ -865,6 +879,7 @@ void setup(void)
 }
 
 unsigned long previous_millis = 0;
+unsigned long previous_millis_battery_check = 0;
 
 void loop(void)
 {
@@ -872,6 +887,17 @@ void loop(void)
 
 	// blink without delay
 	unsigned long ms = millis();
+
+	if (ms - previous_millis_battery_check >= 500)
+	{
+		previous_millis_battery_check = ms;
+		g_batteryf = calculatePinVoltage(A0, .0f, R1, R2, 5.0f);
+
+		if (!g_locked && g_batteryf < 11.0f)
+		{
+			tone(2, 1000, 200);
+		}
+	}
 
 	if (ms - previous_millis >= 5)
 	{
