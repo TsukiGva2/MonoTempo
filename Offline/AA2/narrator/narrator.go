@@ -87,7 +87,6 @@ func (n *Narrator) Watch() {
 		character, ok := n.characters[id]
 
 		if !ok {
-			n.characters[id] = ""
 			Say(strconv.Itoa(id))
 		} else {
 			Say(fmt.Sprintf("%s, Número: %d", character, id))

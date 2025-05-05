@@ -136,10 +136,12 @@ func transitionStep(c int) int {
 func (a *Ay) Process() {
 
 	var (
-		pcData          *com.PCData = &com.PCData{}
-		tagsUSB         atomic.Int64
+		pcData  *com.PCData = &com.PCData{}
+		tagsUSB atomic.Int64
+
 		tagSet          intSet.IntSet = intSet.New()
 		permanentTagSet intSet.IntSet = intSet.New()
+		narratorTagSet  intSet.IntSet = intSet.New()
 	)
 
 	narrator, err := narrator.NewFromFile("/var/monotempo-data/Narratorfile")
@@ -185,7 +187,7 @@ func (a *Ay) Process() {
 			tagSet.Insert(t.Epc)
 			permanentTagSet.Insert(t.Epc)
 
-			if narrator.Enabled {
+			if narrator.Enabled && narratorTagSet.Insert(t.Epc) {
 				// search for the ID in the characters database
 				// and say it.
 				narrator.SearchAndSay(t.Epc)
