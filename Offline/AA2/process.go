@@ -142,13 +142,9 @@ func (a *Ay) Process() {
 		tagSet          intSet.IntSet = intSet.New()
 		permanentTagSet intSet.IntSet = intSet.New()
 		narratorTagSet  intSet.IntSet = intSet.New()
+
+		narrator = narrator.New()
 	)
-
-	narrator, err := narrator.NewFromFile("/var/monotempo-data/Narratorfile")
-
-	if err != nil {
-		log.Println("Running with empty narrator config, error:", err)
-	}
 
 	go narrator.Watch()
 
@@ -190,7 +186,7 @@ func (a *Ay) Process() {
 			if narrator.Enabled && narratorTagSet.Insert(t.Epc) {
 				// search for the ID in the characters database
 				// and say it.
-				narrator.SearchAndSay(t.Epc)
+				narrator.SayNum(t.Epc)
 			}
 		}
 	}()

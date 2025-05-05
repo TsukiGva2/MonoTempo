@@ -122,7 +122,7 @@ func (r *Receba) Atualiza(logger *zap.Logger) {
 	logger.Info("Staffs atualizados")
 }
 
-func (r *Receba) AtualizarAtletas(logger *zap.Logger, narratorpath string) {
+func (r *Receba) AtualizarAtletas(logger *zap.Logger) {
 
 	IgnorarForeignKey(r.db)
 
@@ -172,10 +172,6 @@ func (r *Receba) AtualizarAtletas(logger *zap.Logger, narratorpath string) {
 		return
 	}
 
-	logger.Info("Atualizando Narratorfile")
-
-	r.AtualizaNarrator(narratorpath, atletas, logger)
-
 	logger.Info("Atletas atualizados")
 }
 
@@ -200,9 +196,6 @@ func main() {
 
 	defer r.FechaDB()
 
-	npath := "/var/monotempo-data/Narratorfile"
-	logger = logger.With(zap.String("Narratorfile", npath))
-
 	r.Atualiza(logger)
-	r.AtualizarAtletas(logger, npath)
+	r.AtualizarAtletas(logger)
 }
