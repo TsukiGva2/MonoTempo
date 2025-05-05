@@ -23,10 +23,16 @@ func (r *Receba) BuscaEquip(equipModelo string) (equip Equipamento, err error) {
 
 	if errors.Is(err, ErrNetwork) {
 		Say("Erro de rede, verifique a conexão")
+		return
 	}
 
 	if errors.As(err, &ae) {
 		Say(err.Error())
+		return
+	}
+
+	if equip.ProvaID == 0 {
+		Say("Equipamento não associado a este evento")
 	}
 
 	return

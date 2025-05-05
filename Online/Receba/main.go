@@ -75,10 +75,13 @@ func (r *Receba) Atualiza(logger *zap.Logger) {
 	prova, err := r.BuscaProva(equip.ProvaID)
 
 	if err != nil {
+		if errors.As(err, &je) {
+			logger.Warn("Json error", zap.Error(err))
+		} else {
+			equipLogger.Error("Erro ao buscar a prova", zap.Error(err))
 
-		equipLogger.Error("Erro ao buscar a prova", zap.Error(err))
-
-		return
+			return
+		}
 	}
 
 	logger = logger.With(
@@ -105,10 +108,13 @@ func (r *Receba) Atualiza(logger *zap.Logger) {
 	staff, err := r.BuscaStaff(prova.ID)
 
 	if err != nil {
+		if errors.As(err, &je) {
+			logger.Warn("Json error", zap.Error(err))
+		} else {
+			logger.Error("Erro ao buscar os staffs", zap.Error(err))
 
-		logger.Error("Erro ao buscar os staffs", zap.Error(err))
-
-		return
+			return
+		}
 	}
 
 	logger = logger.With(
@@ -130,6 +136,8 @@ func (r *Receba) Atualiza(logger *zap.Logger) {
 
 func (r *Receba) AtualizarAtletas(logger *zap.Logger) {
 
+	var je *JSONError
+
 	IgnorarForeignKey(r.db)
 
 	r.ConfiguraAPI(os.Getenv("MYTEMPO_API_URL"))
@@ -144,9 +152,13 @@ func (r *Receba) AtualizarAtletas(logger *zap.Logger) {
 
 	if err != nil {
 
-		logger.Error("Erro ao buscar o equipamento", zap.Error(err))
+		if errors.As(err, &je) {
+			logger.Warn("Json error", zap.Error(err))
+		} else {
+			logger.Error("Erro ao buscar o equipamento", zap.Error(err))
 
-		return
+			return
+		}
 	}
 
 	logger = logger.With(
@@ -159,10 +171,13 @@ func (r *Receba) AtualizarAtletas(logger *zap.Logger) {
 	atletas, err := r.BuscaAtletas(equip.ProvaID)
 
 	if err != nil {
+		if errors.As(err, &je) {
+			logger.Warn("Json error", zap.Error(err))
+		} else {
+			logger.Error("Erro ao buscar os atletas", zap.Error(err))
 
-		logger.Error("Erro ao buscar os atletas", zap.Error(err))
-
-		return
+			return
+		}
 	}
 
 	logger = logger.With(zap.Int("athletes_count", len(atletas)))
