@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 func readCsvFile(filePath string) (records [][]string, err error) {
@@ -91,5 +92,7 @@ func (n *Narrator) Watch() {
 		} else {
 			Say(fmt.Sprintf("%s, Número: %d", character, id))
 		}
+
+		<-time.After(3000)
 	}
 }
