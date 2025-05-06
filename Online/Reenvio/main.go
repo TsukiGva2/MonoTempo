@@ -118,12 +118,12 @@ func main() {
 		bf,
 	)
 
+	vl.Consume() // say whatever errors we got
+	vl.Close()
+
 	if err != nil {
 
 		logger.Error("Erro no reenvio", zap.Error(err))
 		os.Exit(1)
 	}
-
-	vl.Consume() // say whatever errors we got
-	vl.Close()
 }
