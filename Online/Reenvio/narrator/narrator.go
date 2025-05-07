@@ -17,6 +17,7 @@ func New() (n Narrator) {
 
 	n.Enabled = true
 	n.queue = make(chan string, 10)
+	n.said = make(map[string]nothing)
 
 	return
 }
