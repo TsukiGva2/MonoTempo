@@ -17,9 +17,6 @@ not_empty() {
 mytempo_upload() {
 
 	"$MYTEMPO_DATA"/Online/setup.online "$(realpath "$1")" upload
-
-	# handle EX_CONFIG (configuration error)
-	[ $? -ne 78 ]
 }
 
 mytempo_update() {
@@ -58,8 +55,8 @@ mytempo_upload_dir() {
 	directory="$DATABASE_DIR/$1"
 	not_empty "$directory" &&
 		for d in "$directory"/*; do
-			cp "$DATABASE_DIR"/equipamento.db "$d" || break
-			mytempo_upload "$d" || break
+			cp "$DATABASE_DIR"/equipamento.db "$d" &&
+				mytempo_upload "$d"
 		done 2>>"$LOG_DIR/pc.log"
 }
 
