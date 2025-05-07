@@ -17,6 +17,8 @@ not_empty() {
 mytempo_upload() {
 
 	"$MYTEMPO_DATA"/Online/setup.online "$(realpath "$1")" upload
+
+	jq -c 'select(.level == "error").msg | contains("Fatal")' "$LOG_DIR/pc.log" | grep -q "true"
 }
 
 mytempo_update() {
@@ -56,7 +58,10 @@ mytempo_upload_dir() {
 	not_empty "$directory" &&
 		for d in "$directory"/*; do
 			cp "$DATABASE_DIR"/equipamento.db "$d" &&
-				mytempo_upload "$d"
+				{
+					mytempo_upload "$d" ||
+						break
+				}
 		done 2>>"$LOG_DIR/pc.log"
 }
 

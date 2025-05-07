@@ -122,7 +122,7 @@ func main() {
 	vl.Close()
 
 	if errors.Is(err, ErrWrongDate) {
-		logger.Error("Data do evento incompativel, interrompendo envios", zap.Error(err))
+		logger.Error("Erro fatal no reenvio (Data da prova incompativel)", zap.Error(err))
 
 		// Configuration error (EX_CONFIG)
 		os.Exit(78)
