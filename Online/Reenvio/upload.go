@@ -198,6 +198,7 @@ func (reenvio *Reenvio) TentarReenvio(
 			uploadErr := reenvio.Upload(tempos, vl, logger)
 
 			if errors.Is(uploadErr, ErrWrongDate) {
+				logger.Info("Queueing error message", zap.Error(err))
 				vl.SayString(ErrWrongDate.Error())
 				err = uploadErr
 			}
