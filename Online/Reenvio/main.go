@@ -121,13 +121,11 @@ func main() {
 	vl.Consume() // say whatever errors we got
 	vl.Close()
 
-	var p *backoff.PermanentError
+	if errors.Is(err, ErrWrongDate) {
+		logger.Error("Data do evento incompativel, interrompendo envios", zap.Error(err))
 
-	if errors.As(err, &p) {
-		logger.Error("Erro fatal no reenvio", zap.Error(err))
-
-		// Internal software error (EX_SOFTWARE)
-		os.Exit(70)
+		// Configuration error (EX_CONFIG)
+		os.Exit(78)
 	}
 
 	if err != nil {
