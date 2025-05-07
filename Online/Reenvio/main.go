@@ -98,8 +98,6 @@ func main() {
 	vl := narrator.New()
 	vl.Enabled = true
 
-	var uploaded int
-
 	bf := backoff.NewExponentialBackOff()
 
 	bf.MaxElapsedTime = 5 * time.Minute
@@ -108,10 +106,7 @@ func main() {
 	err = backoff.Retry(
 		func() (err error) {
 
-			up, err := r.TentarReenvio(lotes, vl, r.Logger)
-
-			// returns 0 on error
-			uploaded += up
+			err = r.TentarReenvio(lotes, vl, r.Logger)
 
 			if errors.Is(err, ErrWrongDate) { // if date is wrong, don't even retry
 				err = backoff.Permanent(err)
@@ -123,12 +118,17 @@ func main() {
 		bf,
 	)
 
-	if uploaded == 0 {
-		vl.SayString("Nenhum atleta enviado")
-	}
-
 	vl.Consume() // say whatever errors we got
 	vl.Close()
+
+	var p *backoff.PermanentError
+
+	if errors.As(err, &p) {
+		logger.Error("Erro fatal no reenvio", zap.Error(err))
+
+		// Internal software error (EX_SOFTWARE)
+		os.Exit(70)
+	}
 
 	if err != nil {
 

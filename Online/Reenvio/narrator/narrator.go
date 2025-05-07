@@ -4,12 +4,9 @@ import (
 	"time"
 )
 
-type nothing struct{}
-
 type Narrator struct {
 	Enabled bool
 
-	said  map[string]nothing
 	queue chan string
 }
 
@@ -17,7 +14,6 @@ func New() (n Narrator) {
 
 	n.Enabled = true
 	n.queue = make(chan string, 10)
-	n.said = make(map[string]nothing)
 
 	return
 }
@@ -35,16 +31,6 @@ func (n *Narrator) Consume() {
 	for {
 		select {
 		case s := <-n.queue:
-
-			_, exists := n.said[s]
-
-			// do not repeat messages
-			if exists {
-				continue
-			}
-
-			n.said[s] = nothing{}
-
 			Say(s)
 		default:
 			return

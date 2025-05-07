@@ -57,6 +57,8 @@ mytempo_upload_dir() {
 		for d in "$directory"/*; do
 			cp "$DATABASE_DIR"/equipamento.db "$d" &&
 				mytempo_upload "$d"
+			# break if we encounter a fatal error on upload
+			[ $? -eq 70 ] && break
 		done 2>>"$LOG_DIR/pc.log"
 }
 
