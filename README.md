@@ -13,6 +13,11 @@ upload start/finish times to the MyTempo platform.
 > July 2024 to February 2026. It is kept for reference and is no longer maintained.
 
 <p align="center">
+  <img src="docs/img/portals.jpg" alt="Two MyTempo portals in the workshop next to a crate of RFID timing chips" width="420">
+  <br><sub>Two portals in the workshop, a tower unit and a box unit, next to a crate of timing chips.</sub>
+</p>
+
+<p align="center">
   <img src="docs/img/results-dashboard.png" alt="MyTempo results dashboard showing reads from RFIDMY501 and RFIDMY503" width="900">
   <br><sub>Reads from two 50x portals in the MyTempo dashboard after an event (event and staff names redacted).</sub>
 </p>
@@ -29,6 +34,7 @@ upload start/finish times to the MyTempo platform.
   - [AA2 and the Arduino screen](#aa2-and-the-arduino-screen)
   - [Chancelor and Provost](#chancelor-and-provost)
   - [Receba, Reenvio and Validate](#receba-reenvio-and-validate)
+- [Archives](#archives)
 - [Repository layout](#repository-layout)
 - [History](#history)
 
@@ -38,6 +44,11 @@ Each unit is a small Arch Linux PC wired to an RFID reader (Chafon or Impinj), a
 Arduino Mega with a 20x4 LCD and two buttons, and a 12 V battery. Software is split
 into an **Offline** half that runs for the whole event without needing internet,
 and an **Online** half that runs on demand to sync with the MyTempo API.
+
+<p align="center">
+  <img src="docs/img/inside-unit.jpg" alt="Inside a 50x unit: LCD and buttons on the lid, Arduino Mega, mini PC, RFID reader and power supply on wooden shelves" width="420">
+  <br><sub>Inside a 50x unit: the LCD with the START and AVANÇAR (next) buttons on the lid, the Arduino Mega (lit red) with its buzzer, the fanless mini PC, the RFID reader and the power supply.</sub>
+</p>
 
 ```mermaid
 flowchart LR
@@ -197,6 +208,8 @@ re-stamped, which protects against units booting with a dead RTC.
 
 <p align="center">
   <img src="docs/img/chafon-reader.png" alt="Chafon integrated UHF reader" width="320">
+  <img src="docs/img/chafon-tower.jpg" alt="Tower portal with the Chafon reader mounted on top" height="320">
+  <br><sub>The Chafon reader, and the same panel mounted on a tower portal above the LCD, buttons and electronics.</sub>
 </p>
 
 The Chafon is an integrated reader/antenna panel controlled through a closed vendor
@@ -312,24 +325,102 @@ goroutine per file and streams each file's results as one upload batch.
 ### AA2 and the Arduino screen
 
 AA2 consumes the tag stream to keep live counters, and talks to an Arduino Mega
-(20x4 I2C LCD, *next* and *action* buttons) over serial at 115200 baud.
+(20x4 I2C LCD, *next* and *action* buttons) over serial at 115200 baud. This design
+replaced three earlier iterations where the Arduino ran a Forth interpreter; they
+are kept in [archives](#archives).
+
+<p align="center">
+  <img src="docs/img/lcd-info-screen.jpg" alt="LCD showing PORTAL my701, Regist.: 2116, Atletas: 2, START:Reset tela" width="420">
+  <br><sub>The Info screen: total reads, unique athletes, and the START action that resets them.</sub>
+</p>
 
 **Counters.** Total reads, unique tags since the last reset, and unique tags for
 the whole event. The event-wide set is seeded at boot from a `TAGS` file that
 chancelor generates from existing databases. Unique sets are mutex-guarded hash
 sets with an atomic counter.
 
-**Protocol.** Line-based, NMEA-style: `$<payload>*<XOR checksum>`. Every 120 ms AA2
-sends one report and polls for a reply. A 400 ms ticker rotates which report is sent:
+#### Serial protocol
 
-| Type | Payload | Shown |
+USB serial at 115200 baud, 8N1. AA2 talks on a fixed 120 ms cadence, and the
+Arduino only speaks when a button is pressed.
+
+**Frames (PC → Arduino)** are newline-terminated, NMEA-style:
+
+```
+$MYTMP;<tags>;<unique>;<type>;<fields…>;<epoch>*<checksum>
+```
+
+- `checksum` is the XOR of every byte between `$` and `*`, as two hex digits. The
+  Arduino folds the received checksum into the same XOR and accepts the frame only if
+  the result is 0. Invalid frames are dropped silently.
+- `epoch` is Unix time **plus the local UTC offset**, so the Arduino can show local
+  time without timezone tables.
+- `tags` and `unique` lead every frame, so the counters update whatever the type.
+
+| Type | Fields after `<type>` | Example |
 | --- | --- | --- |
-| `T` | tags, unique, time | Tag counters |
-| `A` | tags, unique, 4 antenna levels, time | Signal bars per antenna (Impinj only) |
-| `P` | comm, reader, USB, auto-upload, version, serial, backups, … | System status |
-| `L` | uploads, databases, avg. time, errors, status | Last upload report (at boot) |
+| `T` tags | – | `$MYTMP;1520;342;T;1744846380*3D` |
+| `A` antennas | level of antennas 1–4 (0–3) | `$MYTMP;1520;342;A;3;2;0;0;1744846380*29` |
+| `P` PC data | API ok, reader ok, USB present, auto-upload on, version, serial no., backups, event-wide unique tags | `$MYTMP;1520;342;P;1;1;0;1;666;501;3;980;1744846380*38` |
+| `L` log | uploads, databases, avg. processing ms, errors, last status | sent 5 times at boot, from `logs/pc.log` |
 
-The rotation is `T T T A A P P`, so tag counts are on screen most of the time.
+A 400 ms ticker steps through `T T T A A P P`, so tag counts are on screen most of
+the time. Chafon units have no per-antenna data, so they send `P` in the `A` slots. The
+Arduino hides the antenna screen until it has seen an `A` frame, and the log screen
+until it has seen an `L` frame.
+
+**Actions (Arduino → PC)** are 10 bytes, `$MYTMP;<screen>`, with no checksum or
+newline. AA2 polls for them after each report, scans for `$` and maps the screen
+index to a command:
+
+| Screen | # | Action | Where it goes |
+| --- | --- | --- | --- |
+| Info | 0 | Reset session counters and signal windows | AA2 only |
+| Network config | 3 | Reconnect Wi-Fi | `sig-device-operation` → provost |
+| USB | 4 | Dump reads to USB (`stats`) | `sig-upload-data` → chancelor |
+| System | 6 | Update from git (`update`) | 〃 |
+| Auto-upload | 7 | Toggle (`auto_up`) | 〃 |
+| Upload | 8 | Upload times (`normal`) | 〃 |
+| Validate | 9 | Validate chips (`validate`) | 〃 |
+| Delete | 10 | Erase data (`reset`), asks for confirmation | 〃 |
+| Shutdown | 11 | Power off (`poweroff`), asks for confirmation | 〃 |
+
+Antennas (1), network status (2), date/time (5), battery (12) and last upload log (13)
+are display-only.
+
+**Lock handshake.** There is no explicit acknowledgement. The Arduino locks the
+screen after sending any action above screen 2 (except date/time), and unlocks only
+after **three** valid frames arrive. For long-running commands AA2 writes to the FIFO
+and then blocks forever, so the frames stop. The "waiting" screen therefore stays up
+for exactly as long as chancelor is working, and clears when chancelor brings the
+stack back up and a fresh AA2 starts reporting again. Requiring three frames prevents
+a stray frame that was already in flight from unlocking the screen early. Boot uses the same lock, so the
+screen reads "starting…" until AA2 is up.
+
+```mermaid
+sequenceDiagram
+    participant U as Operator
+    participant A as Arduino
+    participant G as AA2
+    participant C as chancelor
+    loop every 120 ms
+        G->>A: report frame (T, A or P)
+    end
+    U->>A: press START on Upload
+    A->>G: $MYTMP#59;8
+    A->>A: lock, show "waiting"
+    G->>C: "normal" to sig-upload-data
+    G->>G: block forever, frames stop
+    C->>C: compose down, Receba + Reenvio
+    C->>G: compose up, fresh AA2
+    G->>A: frame 1, 2, 3
+    A->>A: unlock, back to Info screen
+```
+
+Shutdown is the exception. The Arduino shows a 30 s countdown, turns off the
+backlight and puts the MCU to sleep, while chancelor powers the PC off.
+
+#### Signal, status and battery
 
 **Antenna signal.** Each antenna keeps a 250 ms sliding window of read timestamps
 and maps the read rate to signal bars:
@@ -348,12 +439,8 @@ flowchart LR
 indicator; an ICMP ping to the reader every 4 s sets the reader indicator; `/sys/block`
 is scanned for USB mass storage.
 
-**Actions.** The Arduino has 14 screens (info, antennas, network, USB, date/time,
-upload, validate, delete, shutdown, battery, …). Pressing *action* sends
-`$MYTMP;<screen>`; AA2 translates it to a command word and writes it to a FIFO for
-the host. Destructive actions ask for confirmation, and the screen locks until AA2
-replies. The Arduino also reads battery voltage through a 5:1 divider and beeps
-below 11 V.
+**Battery.** The Arduino reads battery voltage on A0 through a 5:1 divider every
+500 ms and beeps below 11 V.
 
 ### Chancelor and Provost
 
@@ -416,6 +503,166 @@ keep retrying.
 **Validate** sends `SELECT DISTINCT athlete_num` to the chip-validation endpoint,
 so staff can confirm at kit pickup that every bib's chip reads.
 
+## Archives
+
+Before the protocol in [Serial protocol](#serial-protocol), the screen ran Forth
+on the Arduino through three iterations. They are kept here, unchanged, as
+February 2025 snapshots from the MySQL era.
+
+```mermaid
+flowchart LR
+    A["AA2-retro<br/>PC sends Forth phrases<br/>to a nanoFORTH REPL"] --> B["AA2-main<br/>self-modifying Dis word<br/>(Forth side only)"] --> C["AA2-final<br/>Go calls S-1 … S-7,<br/>Arduino navigates itself"] --> D["Offline/AA2<br/>C++ sketch,<br/>checksummed data frames"]
+```
+
+### AA2-retro: the Forth screen
+
+[archives/AA2-retro](archives/AA2-retro) is the first version of AA2 and the
+reference implementation for the screen.
+
+Instead of firmware that knows what to draw, the Arduino ran
+[nanoFORTH](https://github.com/chochain/nanoFORTH), and the PC drove it as an
+interactive Forth REPL over serial through the
+[flick](https://github.com/MyTempoESP/flick) Go library.
+
+- **Extensible at runtime.** The sketch ([sketch.ino](archives/AA2-retro/sketch.ino))
+  only ships a handful of C primitives: draw, print label, print number, IP, time,
+  line feed. It exposes them to Forth as `API` calls and boots by compiling the
+  vocabulary in [forth/](archives/AA2-retro/forth) into its dictionary. The
+  dictionary lives in RAM and accepts new `: word … ;` definitions on the same serial
+  line, so the PC can extend or redefine the screen language at runtime without
+  reflashing.
+- **Screens are programs.** Each frame the PC sends a short Forth phrase that builds
+  the screen in a virtual buffer and ends with `0 API` (draw). The tags screen, for example, is
+  `0 lbl 501 num 2 lbl 1 3 fnm …`. Because Forth cells are 16-bit, counts are sent
+  as value + magnitude (`1520` → `1 3`, shown as `1K`).
+- **Buttons in Forth.** A nanoFORTH timer interrupt (`TMI`) runs `chb`, which
+  debounces both buttons and latches press/release edges into variables. The PC
+  polls them with `bac @ .`, gets `-1` (Forth true) or `0`, and clears them with
+  `0 bac !`. Press timing lives on the PC: a short press switches screens, a 2.3 s hold
+  on the action button runs the screen's action, and a 1.3 s hold on the second button restarts.
+- **Computation on the device.** The info screen pushes the reader code as a hex
+  literal and builds the serial label on the Arduino with `LSH`/`RSH`/`OR` before
+  printing it as hex.
+
+```mermaid
+sequenceDiagram
+    participant G as AA2 (Go + flick)
+    participant F as nanoFORTH on Arduino
+    participant L as LCD
+    Note over F: boot: compile Button.fth + Screen.fth<br/>start TMI timer running chb
+    loop every frame
+        G->>F: 0 lbl 501 num 2 lbl 1 3 fnm … 0 API
+        F->>F: words fill virtual screen buffer
+        F->>L: draw()
+        G->>F: bac @ .
+        F-->>G: -1 (released) or 0
+        G->>F: 0 bac !
+    end
+    G->>F: #58; newword … #59; (redefine at runtime)
+```
+
+The weak spot was the link. Every frame was a full Forth phrase, and every button
+poll was a synchronous round trip through the interpreter.
+
+### AA2-main: the self-modifying screen
+
+[archives/AA2-main](archives/AA2-main) continues AA2-retro. It moves the
+screen logic out of the Go strings and into a real Forth program on the device,
+[forth/aa2.fs](archives/AA2-main/forth/aa2.fs). The PC was meant to call one word
+per screen with raw values on the stack, for example `3 10 3 10 S-1` for the tags
+screen, instead of sending drawing phrases. The Go side in this snapshot still
+sends the AA2-retro phrases; the switch happens in [AA2-final](#aa2-final-the-device-takes-over).
+
+**`Dis` rewrites its own body.** The display word `Dis` is compiled with holes in
+it: 16 bytes of `NOP` at the start for data, and two code buffers of placeholder call
+slots. A timer interrupt runs `Dis` periodically (`50 0 TMI Dis`), so whatever
+it contains is redrawn. The screen words `S-1` … `S-7` never draw anything. They
+patch `Dis`:
+
+- **Data is written as code.** nanoFORTH has no data segment inside a word, so values
+  are stored as instructions that push them. Small values become 1-byte literals, and
+  16-bit values become `LIT` (`$BF`) followed by the value, with 4-byte "BigNumbers"
+  for value + magnitude. When `Dis` runs, its first 16 bytes push the screen's
+  arguments onto the stack.
+- **Calls are patched in.** `program-calls!` writes `CALL` instructions
+  (`$C000 | address`) into the code slots, pointing at the drawing word each screen
+  needs (`Label`, `BigNum`, `Ip`, `Value`, `Ms` …). These then consume what the data
+  section pushed.
+- **Fixed parts stay fixed.** The device-name header, the connectivity footer and the
+  final `0 API` (draw) are compiled into `Dis` once and never touched.
+
+```mermaid
+flowchart LR
+    PC["PC sends<br/>3 10 3 10 S-1"] --> S1["S-1"]
+    S1 -- "data-Big! / data-C!<br/>LIT-encoded values" --> D
+    S1 -- "program-calls!<br/>CALL Label, CALL BigNum" --> C1
+    S1 -- "program-calls!" --> C2
+    subgraph Dis["Dis (word body, redrawn by timer interrupt)"]
+        direction LR
+        D["DATA<br/>16 bytes"] --> H["header<br/>PORTAL my501"] --> C1["CODE-1<br/>2 call slots"] --> C2["CODE-2<br/>2 call slots"] --> F["footer<br/>COMUNICANDO"] --> DR["0 API<br/>draw"]
+    end
+```
+
+To make this practical the snapshot also adds:
+
+- **A Forth "compiler".** nanoFORTH only keeps the first 3 characters of a name, so
+  `aa2.fs` is written with readable names and stack comments.
+  [unforth.vim](archives/AA2-main/forth/unforth.vim) strips the comments,
+  shortens the primitives (`SWAP` → `SWP` …) and renames every word to a unique
+  short name (`w0`, `v29` …). It emits [forth2cstr.h](archives/AA2-main/Arduino/aa2/forth2cstr.h)
+  as a C string that the sketch compiles into its dictionary at boot. Words meant to be
+  called from the PC end in `*` and must stay unique in their first 3 characters.
+- **A patched nanoFORTH.** The VM is vendored into [Arduino/aa2](archives/AA2-main/Arduino/aa2)
+  with two extra words: `NOP`, and `TAG`, which pushes its own address so `aa2.fs`
+  can find the slots to patch at compile time. nanoFORTH is © 2021 chochain under the
+  MIT license; see [LICENSE.nanoFORTH](archives/AA2-main/Arduino/aa2/LICENSE.nanoFORTH).
+- **A date screen.** A `$DA7E` sentinel tells the `Ip` primitive to print `DD/MM/YYYY`.
+
+### AA2-final: the device takes over
+
+[archives/AA2-final](archives/AA2-final) is the last Forth snapshot (24 February
+2025). It finishes AA2-main on both sides and moves screen navigation onto the Arduino.
+
+- **Go speaks the new interface.** Each screen update is one line, such as
+  `3 10 3 10 S-1`, wrapped in `0 TME` / `1 TME` to pause the timer interrupts so `Dis`
+  is never drawn half-patched. The flick client is vendored as [flick/](archives/AA2-final/flick).
+- **The Arduino navigates.** A second timer interrupt runs `do-button` every 10 ticks.
+  It debounces both buttons and, on the arrow button, advances through the 7 screens
+  itself. It reprograms `Dis` through a jump table of `PROG-S-n` words kept in a byte
+  buffer (`Button-Data`, accessed as `BAG`), and records the event in an action byte.
+  The PC polls that byte with `2 BA@ .` to learn which screen is up and which data
+  to send.
+- **Program once, update often.** `PROG-S-n` writes a screen's call slots once, on
+  screen change. `S-n` only rewrites the data section. The slots now hold direct
+  primitive calls (`05 B4` = push 5, `API`, i.e. `Label`) instead of `CALL`s to wrapper
+  words, which saves room in the 1 KB dictionary.
+- **Freezing by patching `EXIT`.** Modal screens (`S-A`: wait, error, confirm) write
+  `EXIT` (`$80`) over the first byte of `Dis`'s data, so every timer redraw returns at
+  once. `do-button` begins with `TAG` so it can store its own address and disable
+  input the same way. `restore` puts the `NOP` back and redraws.
+- **More VM changes.** `EMT`/`CR` were swapped for `===` and `PCK`, numbers always
+  print in hex (the PC parses hex), `pop` is guarded against underflow, and a ninth
+  C API slot adds a dedicated antenna-screen primitive. The license notice is in
+  [LICENSE.nanoFORTH](archives/AA2-final/Arduino/aa2/LICENSE.nanoFORTH).
+
+```mermaid
+sequenceDiagram
+    participant G as AA2 (Go)
+    participant A as nanoFORTH on Arduino
+    participant L as LCD
+    Note over A: arrow button pressed
+    A->>A: do-button: next screen, action = $6n
+    A->>A: PROG-S-n patches the call slots of Dis
+    G->>A: 2 BA@ .
+    A-->>G: 6n
+    G->>A: 0 TME, values + S-n, 1 TME
+    A->>A: S-n patches the data section of Dis
+    A->>L: Dis on timer: redraw
+```
+
+The Forth line ended there. In March–April 2025 the Arduino was rewritten in plain
+C++ with SafeString, and the link became the checksummed data protocol used today.
+
 ## Repository layout
 
 ```
@@ -434,6 +681,10 @@ so staff can confirm at kit pickup that every bib's chip reads.
 │   ├── Receba/                 # API download
 │   ├── Reenvio/                # time upload
 │   └── Validate/               # chip validation upload
+├── archives/
+│   ├── AA2-retro/              # first AA2: Go driving a nanoFORTH REPL
+│   ├── AA2-main/               # second AA2: self-modifying Forth screen
+│   └── AA2-final/              # last Forth AA2: on-device navigation
 ├── scripts/                    # NTP setup, DB inspection helpers
 └── docs/img/                   # README images
 ```
@@ -443,7 +694,7 @@ so staff can confirm at kit pickup that every bib's chip reads.
 | Period | Milestone |
 | --- | --- |
 | Jul–Oct 2024 | Container layout, MyReader, Chafon extension, Receba and a MySQL/PHP storage backend |
-| Jan 2025 | AA2 screen service |
+| Jan–Feb 2025 | AA2 screen service on nanoFORTH: first as a REPL driven from Go ([AA2-retro](#aa2-retro-the-forth-screen)), then a self-modifying screen word ([AA2-main](#aa2-main-the-self-modifying-screen)), then on-device navigation ([AA2-final](#aa2-final-the-device-takes-over)) |
 | Mar 2025 | Move from MySQL to sharded SQLite; Reenvio; chancelor reorganized |
 | Mar–Apr 2025 | Provost; Arduino rewrite with SafeString and on-screen actions |
 | Dec 2025 | Chip validation (Validate), configurable API URL and scheme |
